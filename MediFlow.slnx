@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/MediFlow.BuildingBlocks.Common/MediFlow.BuildingBlocks.Common.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/BuildingBlocks/">
+    <Project Path="tests/BuildingBlocks/MediFlow.BuildingBlocks.Common.Tests/MediFlow.BuildingBlocks.Common.Tests.csproj" />
+  </Folder>
+</Solution>

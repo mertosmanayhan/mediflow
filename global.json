@@ -1,0 +1,29 @@
+{
+  "//": [
+    "Bu dosya bu depoda kullanılacak .NET SDK sürümünü SABİTLER.",
+    "",
+    "NEDEN GEREKLİ?",
+    "Makinede birden fazla SDK olabilir (bizde 8.0.419 ve 10.0.200 var).",
+    "global.json olmadan 'dotnet' her zaman EN YENİ SDK'yı seçer. CI",
+    "sunucusunda farklı bir sürüm olursa derleme farklı davranır ve",
+    "'benim makinemde çalışıyordu' problemi doğar.",
+    "",
+    "Belirtilen sürüm bulunamazsa dotnet HATA VERİR - sessizce başka",
+    "bir sürüme geçmez. İstediğimiz davranış bu.",
+    "",
+    "rollForward: latestFeature",
+    "  Sürüm numarası 10.0.200 -> major.minor.FEATURE+PATCH şeklinde okunur",
+    "  (10 . 0 . 2xx). 'latestFeature', aynı major.minor içindeki en yüksek",
+    "  feature band'ini kullanmaya izin verir: 10.0.200 yoksa 10.0.4xx olur.",
+    "  Ama 11.x'e ASLA atlamaz. Esneklik + öngörülebilirlik dengesi.",
+    "",
+    "allowPrerelease: false",
+    "  Makinede bir RC/preview SDK varsa onu kullanmasın. Üretim projesinde",
+    "  preview SDK ile derlemek istemeyiz."
+  ],
+  "sdk": {
+    "version": "10.0.200",
+    "rollForward": "latestFeature",
+    "allowPrerelease": false
+  }
+}
