@@ -1,0 +1,271 @@
+# ============================================================
+#  MediFlow — yerel geliştirme altyapısı
+#
+#  KULLANIM:
+#    docker compose up -d        # arka planda başlat
+#    docker compose ps           # durum + healthcheck
+#    docker compose logs -f redis
+#    docker compose down         # durdur (VERİ KALIR)
+#    docker compose down -v      # durdur + VERİYİ SİL
+#
+#  DOSYA ADI NEDEN 'compose.yaml'?
+#  Eski ad 'docker-compose.yml'di. Compose Spec standardı
+#  'compose.yaml'ı tercih ediyor ve Docker onu önce arıyor.
+#  Kökte durduğu için 'docker compose up' komutu -f olmadan
+#  çalışır - README'deki "iki komutla çalıştır" sözü bu sayede
+#  doğru kalıyor. Üretim için ileride deploy/docker/ altına
+#  ayrı bir compose dosyası gelecek.
+#
+#  NOT: 'version:' alanı YOK. Compose v2'de kaldırıldı;
+#  yazarsan uyarı alırsın.
+# ============================================================
+
+# ------------------------------------------------------------
+#  PROJE ADI
+#
+#  Compose, oluşturduğu her kaynağa (ağ, volume, container) bu
+#  adı önek olarak koyar: mediflow_default, mediflow_mssql-data...
+#
+#  YAZMASAYDIK KLASÖR ADINDAN TÜRETİRDİ ve üç problem doğardı:
+#   1) Klasörümüz 'GüncelProje' -> Docker kaynak adlarında ASCII
+#      dışı karakter geçersiz olduğu için 'gncelproje' olurdu.
+#      Okunaksız.
+#   2) Klasörü yeniden adlandırırsan proje adı değişir ve Compose
+#      eski volume'leri artık bu projeye ait saymaz -> veritabanın
+#      "kaybolur" (aslında yetim kalır).
+#   3) Projeyi başka bir makinede farklı bir klasöre klonlarsan
+#      adlar farklı olur -> öngörülemez.
+# ------------------------------------------------------------
+name: mediflow
+
+services:
+
+  # ==========================================================
+  #  MSSQL — ana ilişkisel veritabanı (Faz 1)
+  # ==========================================================
+  mssql:
+    # Tag'i SABİT tutuyoruz ('latest' değil): 'latest' bir gün
+    # sessizce büyük sürüm atlayabilir ve "dün çalışıyordu"
+    # problemini yaratır. Reprodüksiyon > kolaylık.
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mediflow-mssql
+
+    environment:
+      # Microsoft'un lisans şartlarını kabul zorunlu, yoksa açılmaz
+      ACCEPT_EULA: "Y"
+      # Şifre .env dosyasından geliyor - repoda DEĞİL.
+      # ':?' sözdizimi: değişken yoksa Compose anlaşılır bir
+      # hata verip durur. Sessizce boş şifreyle başlamaktan iyi.
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?MSSQL_SA_PASSWORD tanimli degil - .env.example dosyasini .env olarak kopyalayin}
+      # Developer sürümü: Enterprise'ın tüm özellikleri,
+      # üretim dışı kullanım için ücretsiz.
+      MSSQL_PID: Developer
+
+    ports:
+      # "host:container" - soldaki senin makinen, sağdaki container içi.
+      # 1433'ü dışarı açıyoruz ki SSMS/Azure Data Studio ile
+      # bağlanabilelim. Faz 7'de üretimde bu port ASLA dışarı
+      # açılmayacak; sadece uygulama container'ı erişecek.
+      - "1433:1433"
+
+    volumes:
+      # ADLANDIRILMIŞ VOLUME: veriyi container'ın ömründen ayırır.
+      # Bu satır olmasa 'docker compose down' ile tüm veritabanı
+      # silinirdi. Detaylı açıklama dosyanın sonunda.
+      - mssql-data:/var/opt/mssql
+
+    healthcheck:
+      # Container "çalışıyor" olabilir ama SQL Server henüz
+      # bağlantı kabul etmiyor olabilir (~20 sn sürer).
+      # Healthcheck "gerçekten hazır mı"yı ölçer.
+      #
+      # $$ NEDEN ÇİFT? Compose tek $'ı KENDİSİ yorumlar.
+      # $$ yazarak "bunu sen değil, container içindeki kabuk
+      # yorumlasın" diyoruz.
+      # -C: image'ın kendi kendine imzaladığı sertifikaya güven.
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1",
+        ]
+      interval: 10s      # her 10 saniyede dene
+      timeout: 5s        # 5 saniyede cevap gelmezse başarısız say
+      retries: 10        # 10 kez üst üste başarısız -> unhealthy
+      start_period: 30s  # ilk 30 saniyedeki başarısızlıkları sayma
+                         # (açılış süresi; bu olmadan erken unhealthy olur)
+
+    restart: unless-stopped
+
+  # ==========================================================
+  #  Redis — cache + distributed lock (Faz 2)
+  # ==========================================================
+  redis:
+    # 'alpine' varyantı: Alpine Linux tabanlı, ~10x daha küçük
+    # imaj (~40 MB vs ~400 MB). Daha az paket = daha az güvenlik
+    # açığı yüzeyi. Faz 6'da Trivy taramasında farkı göreceğiz.
+    image: redis:7.4-alpine
+    container_name: mediflow-redis
+
+    ports:
+      - "6379:6379"
+
+    # Redis varsayılan olarak veriyi diske yazmaz (saf cache).
+    # --appendonly yes: her yazma işlemini bir log dosyasına ekler.
+    # NEDEN İSTİYORUZ? Faz 2'de distributed lock kuracağız;
+    # geliştirme sırasında container yeniden başladığında
+    # cache'in davranışını gözlemlemek istiyoruz.
+    command: ["redis-server", "--appendonly", "yes"]
+
+    volumes:
+      - redis-data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+    restart: unless-stopped
+
+  # ==========================================================
+  #  RabbitMQ — asenkron mesajlaşma (Faz 3)
+  # ==========================================================
+  rabbitmq:
+    # '-management' varyantı web yönetim arayüzünü de içerir.
+    # Faz 3'te exchange/queue/binding kavramlarını KODA GEÇMEDEN
+    # bu arayüzde elle deneyerek öğreneceksin - çok daha hızlı
+    # kavranıyor.
+    image: rabbitmq:4-management-alpine
+    container_name: mediflow-rabbitmq
+
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-mediflow}
+      # ':-' (tire) ile ':?' (soru) farkı:
+      #   ${VAR:-varsayilan} -> yoksa varsayılanı kullan
+      #   ${VAR:?mesaj}      -> yoksa HATA ver
+      # MSSQL şifresinde ':?' kullandık çünkü zayıf varsayılan
+      # tehlikeli. Burada yerel geliştirme için varsayılan yeterli.
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-mediflow}
+
+    ports:
+      - "5672:5672"    # AMQP - uygulamanın bağlandığı protokol portu
+      - "15672:15672"  # Yönetim arayüzü -> http://localhost:15672
+
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+    restart: unless-stopped
+
+  # ==========================================================
+  #  Seq — yapılandırılmış log toplama (Faz 1)
+  # ==========================================================
+  #  NEDEN AYRI BİR LOG SUNUCUSU?
+  #  Faz 3'ten sonra 9 servis olacak. "Hata neredeydi?" sorusunu
+  #  9 ayrı konsol penceresine bakarak cevaplayamazsın. Seq tüm
+  #  logları tek yerde toplar ve ALANLARA GÖRE sorgulanabilir
+  #  hale getirir: PatientId = '123' and Level = 'Error' gibi.
+  #  Faz 5'te bunun büyük kardeşi Elasticsearch + Kibana'ya
+  #  geçeceğiz; Seq öğrenmek için çok daha basit bir başlangıç.
+  # ==========================================================
+  seq:
+    # SÜRÜM SABİT - ve bunu acı yoluyla öğrendik.
+    # Başlangıçta 'latest' yazmıştım. Seq 2026.1 ilk çalıştırmada
+    # zorunlu bir yeni ayar getirdi (admin şifresi) ve container
+    # sürekli çöktü. 'latest' = "bir gün habersiz kırılacak".
+    image: datalust/seq:2026.1
+    container_name: mediflow-seq
+
+    environment:
+      ACCEPT_EULA: "Y"
+      # Seq 2026.1'den itibaren ZORUNLU: ya bir admin şifresi ver,
+      # ya da SEQ_FIRSTRUN_NOAUTHENTICATION ile kimlik doğrulamayı
+      # kapat. Şifre yolunu seçiyoruz: tek bir kural ("sırlar .env'den
+      # gelir") tüm projede geçerli kalsın. Kimlik doğrulamayı kapatmak
+      # yerel için savunulabilir ama sonradan un-öğrenilmesi gereken
+      # bir kısayol olurdu.
+      #
+      # NOT: Bu ayar SADECE ilk çalıştırmada (metastore boşken) okunur.
+      # Şifreyi değiştirmek istersen: docker compose down -v
+      SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_ADMIN_PASSWORD:?SEQ_ADMIN_PASSWORD tanimli degil - .env.example dosyasini .env olarak kopyalayin}
+
+    ports:
+      # Seq hem arayüzü hem log alımını 80 portunda sunar.
+      # 5341 geleneksel Seq portu olduğu için host tarafında onu
+      # kullanıyoruz -> http://localhost:5341
+      - "5341:80"
+
+    volumes:
+      - seq-data:/data
+
+    healthcheck:
+      # Bu healthcheck BAŞTA YOKTU ve olmaması bizi yanlış yönlendirdi:
+      # Seq çökerken 'docker compose ps' onu "Up 2 seconds" gösterdi
+      # (aslında restart politikası yüzünden sürekli yeniden açılıyordu).
+      # Healthcheck olsaydı doğrudan 'unhealthy' görürdük.
+      #
+      # DERS: "Up" container'ın süreci ayakta demektir, servisin
+      # çalıştığı anlamına GELMEZ. Her servise healthcheck yaz.
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    restart: unless-stopped
+
+# ============================================================
+#  VOLUME'LER — verinin container'dan bağımsız yaşaması
+#
+#  Container'ın dosya sistemi GEÇİCİDİR: container silinince
+#  içine yazılan her şey gider. 'docker compose down' sonrası
+#  veritabanının boş olması istemediğimiz bir şey.
+#
+#  Volume, Docker'ın yönettiği kalıcı bir depolama alanı.
+#  Container silinse bile volume kalır; yeni container aynı
+#  volume'e bağlanıp veriyi kaldığı yerden bulur.
+#
+#  'docker compose down -v'  -> volume'ler de silinir (tam sıfırlama)
+#
+#  ADLANDIRILMIŞ VOLUME vs BIND MOUNT:
+#    named volume: - mssql-data:/var/opt/mssql
+#        Docker yönetir, platformdan bağımsız, hızlı.
+#        Windows'ta bind mount kullanmak MSSQL'de izin
+#        hatalarına ve ciddi performans düşüşüne yol açar -
+#        bu yüzden veritabanları için named volume tercih edilir.
+#
+#    bind mount:   - ./data:/var/opt/mssql
+#        Senin klasörüne bağlar. Dosyaları doğrudan görmen
+#        gerektiğinde iyi (ör. config dosyası).
+# ============================================================
+volumes:
+  mssql-data:
+  redis-data:
+  rabbitmq-data:
+  seq-data:
+
+# ============================================================
+#  AĞ (NETWORK)
+#
+#  Compose, bu dosya için otomatik olarak özel bir ağ oluşturur
+#  ve tüm servisleri ona bağlar. Bu yüzden 'networks:' yazmadık.
+#
+#  ÖNEMLİ SONUÇ: servisler birbirine SERVİS ADIYLA erişir.
+#  Faz 1'de uygulamanın bağlantı dizesi şöyle olacak:
+#
+#     Server=mssql,1433;...        <- 'localhost' DEĞİL!
+#
+#  Çünkü container'ın içinde 'localhost' o container'ın kendisi
+#  demektir. Compose'un DNS'i 'mssql' adını doğru IP'ye çevirir.
+#  Bu, yeni başlayanların en sık takıldığı noktalardan biri.
+#
+#  Senin makinenden (container dışından) bağlanırken ise
+#  'localhost:1433' doğru - çünkü ports: ile o portu dışarı
+#  açtık.
+# ============================================================
