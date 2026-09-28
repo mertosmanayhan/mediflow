@@ -4,7 +4,8 @@
 > Modüler monolitten mikroservise evrilen, AWS üzerinde canlı çalışan
 > uçtan uca bir sistem.
 
-[![CI](https://github.com/OWNER/mediflow/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/mediflow/actions/workflows/ci.yml)
+[![CI](https://github.com/mertosmanayhan/mediflow/actions/workflows/ci.yml/badge.svg)](https://github.com/mertosmanayhan/mediflow/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Durum:** 🚧 Geliştiriliyor — Faz 0 (temel kurulum)
 
