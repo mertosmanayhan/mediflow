@@ -50,6 +50,25 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: mediflow-mssql
 
+    # SABİT HOSTNAME - deneyerek öğrenilen bir gereklilik.
+    #
+    # container_name, container'ın DOCKER'DAKİ adıdır. Container'ın
+    # İÇİNDEKİ hostname ise varsayılan olarak container ID'sinin ilk
+    # 12 karakteridir ve her yeniden oluşturmada DEĞİŞİR.
+    #
+    # Sorun: SQL Server ilk açılışta makine adını master veritabanına
+    # YAZAR. Volume kalıcı olduğu için o kayıt kalır ve container
+    # yenilendiğinde @@SERVERNAME eski (artık var olmayan) container
+    # ID'sini döndürmeye devam eder:
+    #     @@SERVERNAME -> 4ecd9ca1b273   (silinmiş container)
+    #     hostname     -> aa31b80bb547   (yeni container)
+    #
+    # Neden önemli: replication, linked server ve Always On
+    # yapılandırmaları @@SERVERNAME'e güvenir; bazı yönetim
+    # script'leri sunucuyu bu isimle bulur. Öngörülemez bir isim
+    # ileride teşhisi zor hatalar üretir.
+    hostname: mediflow-mssql
+
     environment:
       # Microsoft'un lisans şartlarını kabul zorunlu, yoksa açılmaz
       ACCEPT_EULA: "Y"
