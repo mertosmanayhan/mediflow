@@ -1,0 +1,233 @@
+# ============================================================
+#  MediFlow — .editorconfig
+#
+#  Üç iş yapar:
+#   1) Biçimlendirme (girinti, boşluk) - editör bağımsız
+#   2) Kod stili tercihleri (var, this., süslü parantez...)
+#   3) Analizör kurallarının ŞİDDETİ (error / warning / none)
+#
+#  Directory.Build.props'ta EnforceCodeStyleInBuild=true olduğu
+#  için bu dosya sadece IDE'yi değil DERLEMEYİ de yönlendirir.
+#  Yani CI'da da geçerli.
+#
+#  ŞİDDET SEVİYELERİ:
+#    none       -> tamamen kapalı
+#    silent     -> IDE'de düzeltme önerilir ama uyarı görünmez
+#    suggestion -> bilgi (derlemeyi etkilemez)
+#    warning    -> uyarı (CI'da TreatWarningsAsErrors ile HATA olur)
+#    error      -> her yerde hata
+# ============================================================
+
+# Bu dosya kök: MSBuild/editör daha yukarıda .editorconfig aramaz.
+root = true
+
+# ------------------------------------------------------------
+#  TÜM DOSYALAR
+# ------------------------------------------------------------
+[*]
+charset = utf-8
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# NOT: end_of_line BİLEREK yazılmadı.
+# Satır sonu yönetimi .gitattributes'un işi. Burada da tanımlarsak
+# iki kaynak çakışır: CI (Linux, LF) ile local (Windows, CRLF)
+# farklı sonuç üretir ve 'dotnet format --verify-no-changes'
+# adımı sürekli kırılır.
+
+# ------------------------------------------------------------
+#  DOSYA TÜRÜNE GÖRE GİRİNTİ
+# ------------------------------------------------------------
+[*.{cs,csx}]
+indent_size = 4
+
+[*.{csproj,props,targets,xml,config,slnx}]
+indent_size = 2
+
+[*.{json,jsonc,yml,yaml}]
+indent_size = 2
+
+[*.md]
+indent_size = 2
+# Markdown'da satır sonundaki iki boşluk "satır sonu" anlamına gelir
+trim_trailing_whitespace = false
+
+[*.sh]
+indent_size = 2
+
+# ============================================================
+#  C# KURALLARI
+# ============================================================
+[*.cs]
+
+# ------------------------------------------------------------
+#  1) using DÜZENİ
+# ------------------------------------------------------------
+# System.* önce gelsin (gelenek)
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+# Kullanılmayan using = ölü kod, temizlenmeli
+dotnet_diagnostic.IDE0005.severity = warning
+
+# ------------------------------------------------------------
+#  2) NAMESPACE VE DOSYA YAPISI
+# ------------------------------------------------------------
+# Dosya kapsamlı namespace: 'namespace X;' - bir girinti seviyesi kazandırır
+csharp_style_namespace_declarations = file_scoped:warning
+
+# ------------------------------------------------------------
+#  3) 'this.' KULLANIMI
+#     Gereksiz gürültü; alan adlandırma kuralımız (_alan) zaten
+#     alanı yerelden ayırt ediyor.
+# ------------------------------------------------------------
+dotnet_style_qualification_for_field = false:warning
+dotnet_style_qualification_for_property = false:warning
+dotnet_style_qualification_for_method = false:warning
+dotnet_style_qualification_for_event = false:warning
+
+# ------------------------------------------------------------
+#  4) TİP TERCİHLERİ
+#     'string' yaz, 'String' yazma
+# ------------------------------------------------------------
+dotnet_style_predefined_type_for_locals_parameters_members = true:warning
+dotnet_style_predefined_type_for_member_access = true:warning
+
+# ------------------------------------------------------------
+#  5) 'var' TERCİHLERİ
+#     Şiddet BİLEREK 'suggestion': bu bir zevk meselesi, derlemeyi
+#     kırmasına gerek yok. Okunabilirlik için bazen açık tip
+#     (Result result = ...) daha iyidir.
+# ------------------------------------------------------------
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# ------------------------------------------------------------
+#  6) MODERN C# ÖZELLİKLERİ
+#     Bunlar sadece "şık" değil; çoğu daha az hataya yol açar.
+# ------------------------------------------------------------
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_not_pattern = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_prefer_range_operator = true:suggestion
+csharp_style_prefer_index_operator = true:suggestion
+
+# null kontrolü kısayolları - daha az kod, daha az hata
+dotnet_style_null_propagation = true:warning
+dotnet_style_coalesce_expression = true:warning
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:warning
+
+# readonly yapılabilecek alan readonly olsun: yanlışlıkla değiştirmeyi engeller
+dotnet_style_readonly_field = true:warning
+
+# ------------------------------------------------------------
+#  7) İFADE GÖVDELİ ÜYELER (expression-bodied)
+#     Metotlarda zorlamıyoruz; özellik/indeksleyicide teşvik.
+# ------------------------------------------------------------
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+csharp_style_expression_bodied_constructors = when_on_single_line:suggestion
+
+# ------------------------------------------------------------
+#  8) SÜSLÜ PARANTEZ
+#     'silent': tek satırlık if'lerde parantezi zorunlu kılmıyoruz,
+#     ama çok satırlıda IDE hatırlatır.
+# ------------------------------------------------------------
+csharp_prefer_braces = true:silent
+
+# ------------------------------------------------------------
+#  9) ADLANDIRMA KURALLARI
+#     Sözdizimi 3 parçalı: symbols (kime), style (nasıl), rule (bağla)
+# ------------------------------------------------------------
+
+# --- private alanlar: _camelCase ---
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel
+dotnet_naming_rule.private_fields_underscore.severity = warning
+
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_fields.required_modifiers =
+
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+dotnet_naming_style.underscore_camel.required_prefix = _
+
+# --- sabitler: PascalCase ---
+dotnet_naming_rule.constants_pascal.symbols = constants
+dotnet_naming_rule.constants_pascal.style = pascal
+dotnet_naming_rule.constants_pascal.severity = warning
+
+dotnet_naming_symbols.constants.applicable_kinds = field, local
+dotnet_naming_symbols.constants.required_modifiers = const
+
+# --- public üyeler: PascalCase ---
+dotnet_naming_rule.public_members_pascal.symbols = public_members
+dotnet_naming_rule.public_members_pascal.style = pascal
+dotnet_naming_rule.public_members_pascal.severity = warning
+
+dotnet_naming_symbols.public_members.applicable_kinds = property, method, event, field
+dotnet_naming_symbols.public_members.applicable_accessibilities = public, internal, protected
+
+# --- arayüzler: IPascalCase ---
+dotnet_naming_rule.interfaces_prefixed.symbols = interfaces
+dotnet_naming_rule.interfaces_prefixed.style = i_pascal
+dotnet_naming_rule.interfaces_prefixed.severity = warning
+
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+
+dotnet_naming_style.pascal.capitalization = pascal_case
+dotnet_naming_style.i_pascal.capitalization = pascal_case
+dotnet_naming_style.i_pascal.required_prefix = I
+
+# ------------------------------------------------------------
+#  10) ANALİZÖR KARARLARI (gerekçeli istisnalar)
+# ------------------------------------------------------------
+
+# CA1716: "Error tipini yeniden adlandır, başka dillerde ayrılmış
+#          anahtar sözcük (VB.NET/F#)."
+# KARAR: kapalı.
+# GEREKÇE: Bu çözüm sadece C# içerir ve tipleri dışarıya NuGet
+# paketi olarak yayınlanmıyor; VB.NET/F# tüketicisi yok. 'Error'
+# ise Result pattern'in evrensel adı - 'ErrorInfo' gibi
+# alternatifler okunabilirliği düşürür. Yeniden değerlendirme
+# koşulu: BuildingBlocks bir gün public NuGet paketi olursa.
+dotnet_diagnostic.CA1716.severity = none
+
+# CS1591: "XML yorumu olmayan public üye."
+# KARAR: kapalı.
+# GEREKÇE: GenerateDocumentationFile'ı zorunluluktan açtık (IDE0005
+# analizi onsuz derlemede çalışmıyor), "her public üye dokümanlı
+# olmalı" kuralını getirmek için değil. Dokümanı DEĞER kattığı yere
+# yazıyoruz (BuildingBlocks'taki paylaşılan tipler gibi); DTO'lara,
+# endpoint kayıtlarına ve test metotlarına zorunlu tutmak gürültü
+# üretir ve insanları içi boş /// <summary>Gets the id.</summary>
+# yorumları yazmaya iter - bu dokümantasyondan kötüdür.
+dotnet_diagnostic.CS1591.severity = none
+
+# ============================================================
+#  TEST PROJELERİ — farklı kurallar geçerli
+# ============================================================
+[tests/**/*.cs]
+
+# CA1707: "Üye adından alt çizgileri kaldır."
+# KARAR: testlerde kapalı.
+# GEREKÇE: Test isimleri bir DOKÜMANTASYONDUR ve cümle gibi
+# okunmalıdır. 'FailureOfT_Should_Throw_When_ValueIsAccessed'
+# okunabilir; 'FailureOfTShouldThrowWhenValueIsAccessed' değil.
+# Üretim kodunda kural AÇIK kalır.
+dotnet_diagnostic.CA1707.severity = none
+
+# CA1062: "Genel metot argümanlarını null'a karşı doğrula."
+# KARAR: testlerde kapalı - test metotlarına dışarıdan girdi gelmez,
+# girdiyi [InlineData] ile biz veririz.
+dotnet_diagnostic.CA1062.severity = none
+
+# CA2007: "await'te ConfigureAwait çağır."
+# KARAR: testlerde kapalı - xUnit'in senkronizasyon bağlamı yoktur,
+# kural anlamsız gürültü üretir.
+dotnet_diagnostic.CA2007.severity = none
