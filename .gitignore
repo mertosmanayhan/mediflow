@@ -1,0 +1,119 @@
+# ============================================================
+#  MediFlow — .gitignore
+#  Buradaki her satır: "bu dosyaları Git takip etmesin"
+# ============================================================
+
+# ------------------------------------------------------------
+# 1) .NET DERLEME ÇIKTILARI
+#    Kaynak koddan otomatik üretilir. Depoda olmaları gereksiz
+#    (her makinede yeniden üretilir) ve zararlı (binlerce dosya).
+# ------------------------------------------------------------
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]uild/
+[Aa]rtifacts/
+*.dll
+*.exe
+*.pdb
+
+# ------------------------------------------------------------
+# 2) IDE / EDİTÖR AYARLARI
+#    Senin makinene özel: pencere konumları, açık dosyalar...
+#    Takım arkadaşının ortamını bozar.
+#    İSTİSNA: .vscode/ içinde paylaşmak İSTEDİĞİMİZ dosyalar
+#    olabilir (ör. önerilen eklentiler) - onları alttaki
+#    "!" ile geri açıyoruz. "!" = "bunu yine de takip et".
+# ------------------------------------------------------------
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+# ------------------------------------------------------------
+# 3) SIRLAR — EN KRİTİK BÖLÜM
+#    Bir kez commit edilen şifre, sonradan silinse bile Git
+#    geçmişinde SONSUZA KADAR kalır. Botlar public repo'ları
+#    tarayıp bulur.
+#    Kural: gerçek değerler asla depoda olmaz. Depoda sadece
+#    ".example" uzantılı, içi boş ŞABLONLAR olur.
+# ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.local.json
+*.pfx
+*.p12
+*.key
+*.pem
+secrets.json
+
+# Terraform (Faz 7) — state dosyası altyapının fotoğrafıdır
+# ve içinde DB şifreleri açık metin olarak bulunur.
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform/
+.terraform.lock.hcl
+
+# ------------------------------------------------------------
+# 4) PAKETLER / BAĞIMLILIKLAR
+#    package.json ve .csproj dosyalarından yeniden indirilir.
+# ------------------------------------------------------------
+node_modules/
+packages/
+*.nupkg
+.pnpm-store/
+
+# ------------------------------------------------------------
+# 5) TEST & ANALİZ ÇIKTILARI (Faz 6'da üretmeye başlayacağız)
+# ------------------------------------------------------------
+[Tt]est[Rr]esult*/
+coverage/
+coverage*.json
+coverage*.xml
+coverage*.info
+*.trx
+StrykerOutput/
+.sonarqube/
+
+# ------------------------------------------------------------
+# 6) İŞLETİM SİSTEMİ ÇÖPLERİ
+#    Windows ve macOS klasörlere gizli dosya bırakır.
+# ------------------------------------------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# ------------------------------------------------------------
+# 7) LOG VE GEÇİCİ DOSYALAR
+# ------------------------------------------------------------
+*.log
+logs/
+*.tmp
+*.bak
+*.swp
+
+# ------------------------------------------------------------
+# 8) VERİTABANI DOSYALARI (local SQLite / LocalDB denemeleri)
+# ------------------------------------------------------------
+*.mdf
+*.ldf
+*.db
+*.db-shm
+*.db-wal

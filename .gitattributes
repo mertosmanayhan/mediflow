@@ -1,0 +1,106 @@
+# ============================================================
+#  MediFlow — .gitattributes
+#  Git'e dosyaları nasıl ele alacağını söyler.
+#  En önemli işi: satır sonu (CRLF/LF) yönetimi.
+#
+#  NEDEN GEREKLİ?
+#  Windows'ta geliştiriyoruz ama kod Linux'ta çalışacak
+#  (Docker, GitHub Actions, AWS). Shell script'lerde CRLF
+#  olursa Linux "file not found" der ve saatler kaybedilir.
+# ============================================================
+
+# ------------------------------------------------------------
+# 1) VARSAYILAN DAVRANIŞ
+#    "text=auto" = Git metin dosyalarını kendisi tanısın ve
+#    DEPOYA HER ZAMAN LF olarak yazsın.
+#    Çalışma klasöründe ne göreceğin ayrı konu; depo tek tip
+#    olur. Böylece Windows/Linux/macOS karışık ekipte "tüm
+#    dosya değişmiş" gibi görünen sahte diff'ler oluşmaz.
+# ------------------------------------------------------------
+* text=auto
+
+# ------------------------------------------------------------
+# 2) MUTLAKA LF OLMASI GEREKENLER
+#    Bunlar Linux'ta çalıştırılacak/okunacak dosyalar.
+#    "eol=lf" = çalışma klasöründe bile LF zorla.
+# ------------------------------------------------------------
+*.sh            text eol=lf
+*.bash          text eol=lf
+Dockerfile      text eol=lf
+*.Dockerfile    text eol=lf
+.dockerignore   text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.tf            text eol=lf
+*.tfvars        text eol=lf
+*.conf          text eol=lf
+Caddyfile       text eol=lf
+Makefile        text eol=lf
+
+# ------------------------------------------------------------
+# 3) WINDOWS'A ÖZEL: CRLF ZORUNLU
+#    Batch/PowerShell script'leri Windows'ta çalışır.
+# ------------------------------------------------------------
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+*.ps1           text eol=crlf
+*.sln           text eol=crlf
+*.slnx          text eol=crlf
+
+# ------------------------------------------------------------
+# 4) KAYNAK KOD VE DOKÜMANLAR
+#    "text" = metin olduğunu garanti et (Git yanlış tahmin
+#    edip ikili dosya sanmasın).
+# ------------------------------------------------------------
+*.cs            text diff=csharp
+*.csproj        text
+*.props         text
+*.targets       text
+*.json          text
+*.jsonc         text
+*.md            text
+*.txt           text
+*.xml           text
+*.config        text
+*.editorconfig  text
+*.ts            text
+*.tsx           text
+*.js            text
+*.jsx           text
+*.css           text
+*.html          text
+*.sql           text
+
+# ------------------------------------------------------------
+# 5) İKİLİ (BINARY) DOSYALAR
+#    "binary" = Git bunları metin gibi işlemesin, satır sonu
+#    dönüşümü yapmasın, diff almaya çalışmasın.
+#    Yoksa bir PNG'yi bozabilir.
+# ------------------------------------------------------------
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.webp          binary
+*.pdf           binary
+*.zip           binary
+*.gz            binary
+*.7z            binary
+*.dll           binary
+*.exe           binary
+*.pfx           binary
+*.snk           binary
+*.woff          binary
+*.woff2         binary
+*.ttf           binary
+
+# ------------------------------------------------------------
+# 6) GITHUB'A İPUÇLARI (linguist)
+#    GitHub repo dilini dosyalara bakarak tahmin eder.
+#    Üretilmiş/vendor kodu sayıma girmesin ki repo "%80 HTML"
+#    gibi görünmesin.
+# ------------------------------------------------------------
+docs/**             linguist-documentation
+*.generated.cs      linguist-generated
+**/Migrations/**    linguist-generated
