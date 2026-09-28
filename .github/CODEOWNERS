@@ -1,0 +1,40 @@
+# ============================================================
+#  CODEOWNERS — hangi dosyanın sahibi kim?
+#
+#  NE YAPAR?
+#  Bir PR bu desenlere uyan dosyalara dokunduğunda, GitHub
+#  buradaki kişiyi/ekibi OTOMATİK olarak reviewer atar.
+#
+#  SÖZDİZİMİ: <dosya deseni>  <@kullanıcı veya @org/ekip>
+#  .gitignore ile aynı desen mantığı. SON EŞLEŞEN KURAL KAZANIR
+#  (.gitignore'un tersine değil; burada da alttaki üsttekini ezer).
+#
+#  NOT: Tek kişilik bir projede pratik faydası sınırlı - kendi
+#  PR'ını kendine atamak bir şey değiştirmez. Yine de burada
+#  tutuyoruz çünkü:
+#   1) Dosya, "bu klasörden kim sorumlu" bilgisini dokümante eder
+#   2) Ruleset'te "Require review from Code Owners" kuralını
+#      açmak istersek bu dosya ön koşul
+#   3) Projeye biri katkı verirse gün 1'de çalışır
+# ============================================================
+
+# Varsayılan: her şeyin sahibi ben
+*                       @mertosmanayhan
+
+# ------------------------------------------------------------
+# Aşağıdaki satırlar ileride servisler oluştukça anlam kazanacak.
+# Şu an hepsi aynı kişiyi gösteriyor ama yapı hazır olsun.
+# Gerçek bir ekipte burası şöyle görünürdü:
+#   /src/Services/Identity/   @security-team
+#   /deploy/terraform/        @platform-team
+# ------------------------------------------------------------
+
+# Altyapı ve dağıtım: kırılırsa canlı düşer, dikkatli bakılmalı
+/deploy/                @mertosmanayhan
+/.github/workflows/     @mertosmanayhan
+
+# Servisler arası ortak sözleşmeler: değişirse TÜM servisler etkilenir
+/src/BuildingBlocks/    @mertosmanayhan
+
+# Mimari kararlar
+/docs/adr/              @mertosmanayhan
