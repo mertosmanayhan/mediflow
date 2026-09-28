@@ -210,14 +210,22 @@ sorun değil, **faz sırası** önemli.
 
 **Öğrenilen:** Solution mimarisi, Docker Compose, GitHub Actions temeli, Git disiplini.
 
-- [ ] GitHub'da **public** repo (`mediflow`) — public çünkü: sınırsız Actions dakikası + portfolyo
+- [x] GitHub'da **public** repo (`mediflow`) — public çünkü: sınırsız Actions dakikası + portfolyo
 - [ ] `GitHub Student Developer Pack` başvurusu (Copilot Pro, JetBrains, cloud kredileri ücretsiz)
-- [ ] Solution iskeleti, `Directory.Build.props` + Central Package Management
-- [ ] `.editorconfig` + analyzer'lar + `TreatWarningsAsErrors`
-- [ ] `docker compose up` ile MSSQL + Redis + RabbitMQ + Seq ayağa kalkıyor
-- [ ] `ci.yml`: build + test + format check
-- [ ] Branch protection, PR template, CODEOWNERS, Dependabot
-- [ ] ADR-0001: "Neden modüler monolitle başlıyorum"
+- [x] Solution iskeleti, `Directory.Build.props` + Central Package Management
+- [x] `.editorconfig` + analyzer'lar + `TreatWarningsAsErrors` *(CI'da; local'de uyarı kalır)*
+- [x] `docker compose up` ile MSSQL + Redis + RabbitMQ + Seq ayağa kalkıyor
+- [x] `ci.yml`: build + test + format check
+- [x] Branch protection, PR template, CODEOWNERS, Dependabot
+- [x] ADR-0001: "Neden modüler monolitle başlıyorum"
+
+**Faz 0'da fazladan yapılanlar** (plandan öne alındı):
+
+- [x] `.gitattributes` — satır sonu yönetimi (CRLF/LF), Linux'a gidecek dosyalar için
+- [x] `global.json` — SDK sürümü sabitlendi, local ile CI aynı toolchain
+- [x] `Result` / `Error` tipleri + 10 unit test *(Faz 1 listesindeydi)*
+- [x] Zorunlu status check + kuralın bilerek ihlal edilerek doğrulanması
+- [x] Volume kalıcılığı deneyle kanıtlandı (Redis ve MSSQL)
 
 **DoD:** Repo'yu sıfırdan klonlayan biri `docker compose up` + `dotnet run` ile
 çalıştırabiliyor. README'de bu 2 komut yazıyor.
@@ -231,7 +239,7 @@ sorun değil, **faz sırası** önemli.
 - [ ] Domain modelleme: `Patient` aggregate, `Allergy`/`ChronicCondition` value object'leri
 - [ ] CQRS: `CreatePatientCommand`, `GetPatientByIdQuery` + handler'lar
 - [ ] MediatR pipeline behavior'ları: **Validation, Logging, Transaction, Performance**
-- [ ] Result pattern (exception'la flow control yapma)
+- [x] Result pattern (exception'la flow control yapma) *(Faz 0'da yapıldı)*
 - [ ] EF Core: migration, seed, global query filter (soft delete), audit alanları
 - [ ] JWT: access (15 dk) + refresh token (7 gün, **rotation + reuse detection**)
 - [ ] Role + **permission-based authorization** (`[HasPermission("patient.read")]`)

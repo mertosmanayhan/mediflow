@@ -50,8 +50,48 @@ Aşağıdaki liste hedeftir; her biri ilgili fazda eklenir
 
 ## Nasıl çalıştırılır?
 
-> ⏳ Henüz çalıştırılabilir bir şey yok — Faz 0 tamamlanınca bu bölüm
-> **iki komuta** inecek.
+### Gereksinimler
+
+| Araç | Sürüm | Not |
+|---|---|---|
+| [.NET SDK](https://dotnet.microsoft.com/download) | 10.0.200+ | Sürüm `global.json` ile sabitlenmiştir |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | 24+ | Altyapı servisleri için; en az 4 GB RAM ayrılmış olmalı |
+
+### Üç komut
+
+```bash
+# 1) Ortam değişkenlerini hazırla (gerçek .env repoda değildir)
+cp .env.example .env        # Windows: Copy-Item .env.example .env
+
+# 2) Altyapıyı başlat (MSSQL, Redis, RabbitMQ, Seq)
+docker compose up -d
+
+# 3) Derle ve testleri çalıştır
+dotnet test MediFlow.slnx
+```
+
+### Altyapı servisleri
+
+| Servis | Adres | Giriş | Ne için |
+|---|---|---|---|
+| MSSQL | `localhost:1433` | `sa` / `.env` içindeki şifre | Ana veritabanı |
+| Redis | `localhost:6379` | — | Cache + distributed lock |
+| RabbitMQ (AMQP) | `localhost:5672` | `.env` içindeki bilgiler | Mesajlaşma |
+| RabbitMQ (arayüz) | http://localhost:15672 | `.env` içindeki bilgiler | Kuyruk yönetimi |
+| Seq | http://localhost:5341 | — | Log arama |
+
+### Faydalı komutlar
+
+```bash
+docker compose ps                 # durum ve healthcheck
+docker compose logs -f mssql      # bir servisin loglarını izle
+docker compose down               # durdur (veri korunur)
+docker compose down -v            # durdur ve TÜM VERİYİ SİL
+```
+
+> ℹ️ Uygulama container içinden veritabanına bağlanırken `localhost` değil
+> **servis adı** kullanılır (`Server=mssql,1433`). Compose'un özel ağında
+> `localhost`, container'ın kendisi anlamına gelir.
 
 ## Dokümantasyon
 
