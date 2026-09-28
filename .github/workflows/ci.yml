@@ -1,0 +1,207 @@
+# ============================================================
+#  CI — her PR'da derle ve test et
+#
+#  Bu dosyanın yeri SABİT: .github/workflows/ altında olmak
+#  zorunda, GitHub tam olarak buraya bakar.
+#
+#  YAML NOTU: girinti ANLAMLIDIR (Python gibi). Sekme (tab)
+#  karakteri YASAK, sadece boşluk. '-' ile başlayan satırlar
+#  liste elemanıdır.
+# ============================================================
+
+# Actions sekmesinde ve PR'daki kontrol listesinde görünen ad.
+name: CI
+
+# ------------------------------------------------------------
+#  NE ZAMAN ÇALIŞIR?
+# ------------------------------------------------------------
+on:
+  # 1) main'i hedefleyen her PR'da.
+  #    Asıl kalite kapımız bu: kırık kod merge EDİLEMEZ.
+  pull_request:
+    branches: [main]
+
+  # 2) main'e her push'ta (yani her merge sonrası).
+  #    "PR'da geçti ama merge sonrası kırıldı" durumunu yakalar:
+  #    iki PR ayrı ayrı geçip birleştiğinde çakışabilir
+  #    (semantic conflict). Ayrıca README'deki badge main
+  #    dalındaki son çalıştırmayı gösterir.
+  push:
+    branches: [main]
+
+  # 3) Actions sekmesinden elle tetikleme.
+  #    Hata ayıklarken ve cache'i yenilemek istediğinde işe yarar.
+  workflow_dispatch:
+
+# ------------------------------------------------------------
+#  İZİNLER — en az yetki (least privilege)
+#
+#  Varsayılan olarak workflow'un GITHUB_TOKEN'ı geniş yetkilere
+#  sahip olabilir. Bu iş sadece kodu OKUYOR; yazma yetkisine
+#  ihtiyacı yok. Kötü niyetli/ele geçirilmiş bir action'ın
+#  yapabileceklerini baştan sınırlıyoruz.
+#
+#  Faz 7'de AWS'ye deploy eden workflow'da 'id-token: write'
+#  ekleyeceğiz (OIDC için) - ama SADECE o workflow'da.
+# ------------------------------------------------------------
+permissions:
+  contents: read
+
+# ------------------------------------------------------------
+#  EŞZAMANLILIK
+#
+#  Aynı dala hızlı hızlı iki push atarsan ilk çalıştırma
+#  anlamsızlaşır. cancel-in-progress ile eskisi iptal edilir:
+#  hem daha hızlı geri bildirim hem boşa giden kaynak yok.
+#
+#  group: aynı gruptaki çalıştırmalar birbirini iptal eder.
+#  github.ref = dal referansı, yani her dal kendi grubunda.
+# ------------------------------------------------------------
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# ------------------------------------------------------------
+#  TÜM ADIMLAR İÇİN ORTAM DEĞİŞKENLERİ
+# ------------------------------------------------------------
+env:
+  # dotnet'in her komutta bastığı tanıtım metnini kapat: log temiz kalır
+  DOTNET_NOLOGO: true
+  # Telemetri gönderimini kapat: gereksiz ağ trafiği ve gecikme
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  # Release yapılandırmasını tek yerden yönet
+  BUILD_CONFIGURATION: Release
+
+jobs:
+  # ==========================================================
+  #  JOB: derle ve test et
+  # ==========================================================
+  build-and-test:
+    # PR'daki kontrol listesinde görünecek ad.
+    # ÖNEMLİ: ruleset'e "zorunlu status check" eklerken TAM OLARAK
+    # bu metni yazacağız. Burada değiştirirsen ruleset'i de
+    # güncellemen gerekir, yoksa var olmayan bir kontrolü
+    # beklemeye başlar ve hiçbir PR merge edilemez.
+    name: Build & Test
+
+    runs-on: ubuntu-latest
+
+    # Takılan bir job'ı 6 saat bekletmeyelim. Bu iş ~2 dakika
+    # sürüyor; 15 dakika bol bol yeterli bir güvenlik ağı.
+    timeout-minutes: 15
+
+    steps:
+      # ------------------------------------------------------
+      #  1) Kodu runner'a indir
+      #     Runner sıfırdan temiz bir makine - repo orada yok.
+      # ------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Sadece son commit'i indir (tüm geçmişi değil): daha hızlı.
+          # Faz 6'da SonarCloud gibi araçlar tam geçmiş isteyebilir,
+          # o zaman 0 yapacağız.
+          fetch-depth: 1
+
+      # ------------------------------------------------------
+      #  2) .NET SDK kur
+      #     global-json-file sayesinde sürümü BURAYA yazmıyoruz:
+      #     action global.json'ı okuyup tam o sürümü kuruyor.
+      #     Böylece local ve CI aynı toolchain'i kullanır ve
+      #     SDK sürümünü tek yerden yönetiriz.
+      # ------------------------------------------------------
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # ------------------------------------------------------
+      #  3) NuGet paketlerini cache'le
+      #
+      #     Her çalıştırmada paketleri internetten indirmek
+      #     zaman kaybı. Cache anahtarı Directory.Packages.props'un
+      #     hash'i: paket sürümleri değişmediyse cache geçerlidir.
+      #
+      #     Central Package Management'in beklenmedik bir faydası:
+      #     tek dosyanın hash'i tüm bağımlılık kümesini temsil
+      #     ediyor. CPM olmasa 15 csproj'yi hash'lemek gerekirdi.
+      #
+      #     restore-keys: tam eşleşme yoksa en yakın eski cache'i
+      #     kullan (kısmi fayda), sıfırdan indirmekten iyidir.
+      # ------------------------------------------------------
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'global.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      # ------------------------------------------------------
+      #  4) Bağımlılıkları çöz
+      # ------------------------------------------------------
+      - name: Restore
+        run: dotnet restore MediFlow.slnx
+
+      # ------------------------------------------------------
+      #  5) Derle
+      #
+      #     --no-restore: 4. adımda yaptık, tekrar etmesin.
+      #
+      #     --configuration Release: Local'de Debug derliyoruz
+      #     (hızlı, hata ayıklanabilir). CI Release derler çünkü
+      #     üretime giden BUDUR: optimizasyonlar açık, DEBUG
+      #     sembolleri kapalı. Sadece Release'de ortaya çıkan
+      #     davranış farkları vardır.
+      #
+      #     -p:ContinuousIntegrationBuild=true: Adım 5'te
+      #     Directory.Build.props'a koyduğumuz koşulu tetikler ->
+      #     TreatWarningsAsErrors devreye girer. Yani buradan
+      #     sonra TEK BİR UYARI derlemeyi kırar.
+      # ------------------------------------------------------
+      - name: Build
+        run: >-
+          dotnet build MediFlow.slnx
+          --no-restore
+          --configuration ${{ env.BUILD_CONFIGURATION }}
+          -p:ContinuousIntegrationBuild=true
+
+      # ------------------------------------------------------
+      #  6) Testleri çalıştır
+      #     --no-build: 5. adımda derledik. Yapılandırma AYNI
+      #     olmak zorunda, yoksa derlenmiş çıktıyı bulamaz.
+      # ------------------------------------------------------
+      - name: Test
+        run: >-
+          dotnet test MediFlow.slnx
+          --no-build
+          --configuration ${{ env.BUILD_CONFIGURATION }}
+          --verbosity normal
+
+      # ------------------------------------------------------
+      #  7) Biçimlendirme kontrolü
+      #
+      #     if: ${{ !cancelled() }}
+      #     Varsayılan davranış: bir adım başarısız olursa
+      #     sonrakiler ATLANIR. Ama biçim kontrolü testlerden
+      #     bağımsız; testler kırıkken de sonucunu görmek
+      #     isteriz - tek çalıştırmada TAM geri bildirim.
+      #     cancelled() kontrolü: sen iptal ettiysen çalışmasın.
+      #
+      #     --verify-no-changes: dosyaları DEĞİŞTİRME, sadece
+      #     değiştirilmesi gerekiyor mu diye bak; gerekiyorsa
+      #     sıfırdan farklı çıkış kodu döndür.
+      # ------------------------------------------------------
+      - name: Verify formatting
+        if: ${{ !cancelled() }}
+        run: dotnet format MediFlow.slnx --verify-no-changes --verbosity diagnostic
+
+# ============================================================
+#  SONRAKİ FAZLARDA BU DOSYAYA EKLENECEKLER:
+#
+#  Faz 6: kod kapsama eşiği, CodeQL, Trivy imaj taraması,
+#         Testcontainers ile integration testler, test sonucu
+#         artifact'ı, 9 servis için matrix + path filter
+#  Faz 7: Docker imajı derle -> GHCR'a push -> AWS'ye deploy
+#         (ayrı workflow, OIDC ile)
+# ============================================================
