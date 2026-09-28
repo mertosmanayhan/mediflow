@@ -127,7 +127,7 @@ Domain katmanı hiçbir NuGet paketine bağlı olmaz (MediatR hariç, o da opsiy
 | Logging | Serilog → **Seq** (dev) / Elasticsearch+Kibana (prod), correlation ID | Faz 5 |
 | Tracing | **OpenTelemetry** → Jaeger / Grafana Tempo | Faz 5 |
 | Metrics | Prometheus + **Grafana**, custom metrics, HealthChecks UI | Faz 5 |
-| Test | xUnit v3, FluentAssertions, NSubstitute, **Testcontainers**, Stryker.NET, k6 | Faz 6 |
+| Test | xUnit v2 (v3'e geçiş Faz 6'da değerlendirilecek), FluentAssertions, NSubstitute, **Testcontainers**, Stryker.NET, k6 | Faz 6 |
 | Container | **Docker**, multi-stage build, Compose profiles, **Portainer** | Faz 0-2 |
 | CI/CD | **GitHub Actions**: matrix, path filter, reusable workflow, GHCR, OIDC | Faz 0 → sürekli |
 | Kalite | CodeQL, Trivy, Dependabot, SonarCloud, coverage gate | Faz 6 |
