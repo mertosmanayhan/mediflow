@@ -1,0 +1,99 @@
+# ============================================================
+#  Dependabot — GitHub'ın ücretsiz bağımlılık güncelleme botu
+#
+#  NE YAPAR?
+#  Kullandığın paketleri (NuGet, GitHub Actions, npm, Docker)
+#  düzenli olarak tarar, yeni sürüm çıkınca SENİN ADINA PR açar.
+#
+#  NEDEN GEREKLİ?
+#  1) GÜVENLİK: paketlerde açık (CVE) bulunur. Elle takip etmek
+#     imkansız; bot 3 saat içinde haber verir.
+#  2) BİRİKME SORUNU: 6 ay güncellemezsen 40 paket birden eskir
+#     ve hepsini aynı anda yükseltmek cehennem olur. Haftada
+#     2 küçük PR, 6 ayda bir felaket yerine.
+#
+#  Bu dosya .github/ klasöründe OLMAK ZORUNDA - GitHub buraya bakar.
+# ============================================================
+
+version: 2
+
+updates:
+  # ----------------------------------------------------------
+  # 1) NUGET — .NET paketleri
+  # ----------------------------------------------------------
+  - package-ecosystem: "nuget"
+    # "/" = deponun kökünden başlayarak tüm .csproj dosyalarını tara.
+    # Faz 0'da henüz proje yok; bot bir şey bulamaz, sorun değil.
+    directory: "/"
+
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Istanbul"
+
+    # Aynı anda en fazla 5 açık PR. Sınır olmasa bot 30 PR açıp
+    # seni boğabilir.
+    open-pull-requests-limit: 5
+
+    labels:
+      - "dependencies"
+
+    # Bot'un commit mesajları da Conventional Commits'e uysun.
+    # Yoksa otomatik CHANGELOG üretimimiz bozulur.
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+
+    # GRUPLAMA: küçük güncellemeleri TEK PR'da birleştir.
+    # 12 ayrı PR yerine 1 PR -> gözden geçirme yükü düşer.
+    # Major sürümler gruba girmez; onlar tek tek gelir çünkü
+    # breaking change içerebilir ve ayrıca incelenmeli.
+    groups:
+      dotnet-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ----------------------------------------------------------
+  # 2) GITHUB ACTIONS — CI/CD adımlarının sürümleri
+  #
+  # Workflow'larda "uses: actions/checkout@v4" gibi satırlar var.
+  # Bunlar da eskir ve GÜVENLİK AÇISINDAN KRİTİK: bir action
+  # zararlı hale gelirse doğrudan CI ortamında kod çalıştırır
+  # (secret'larına erişebilir). Güncel tutmak şart.
+  # ----------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    # Actions için "/" demek ".github/workflows" demektir.
+    directory: "/"
+
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Istanbul"
+
+    open-pull-requests-limit: 3
+
+    labels:
+      - "dependencies"
+
+    commit-message:
+      prefix: "chore(ci)"
+
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+# ============================================================
+#  SONRA EKLENECEKLER (henüz o dosyalar yok - YAGNI):
+#
+#  - package-ecosystem: "docker"     -> Faz 1, Dockerfile yazınca
+#    directory: "/src/Services/Identity"
+#
+#  - package-ecosystem: "npm"        -> Faz 9, React arayüzünde
+#    directory: "/src/Web"
+# ============================================================
