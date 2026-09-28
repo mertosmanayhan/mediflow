@@ -1,0 +1,57 @@
+<!--
+  ============================================================
+   Directory.Packages.props — NuGet sürümlerinin TEK kaynağı
+   (Central Package Management / CPM)
+  ============================================================
+
+   NASIL ÇALIŞIR?
+   ManagePackageVersionsCentrally açıkken:
+     - Sürümler burada <PackageVersion> ile tanımlanır
+     - .csproj dosyaları sadece <PackageReference Include="..." />
+       yazar, SÜRÜM YAZMAZ
+     - Bir .csproj yine de Version yazarsa NuGet NU1008 hatası
+       verir -> kural tavsiye değil, zorunlu
+
+   NEDEN?
+   9 servis x 10 paket = 90 sürüm numarasını elle senkron tutmak
+   imkansız. Aynı paketin iki serviste farklı sürümde olması,
+   çalışma zamanında teşhisi çok zor hatalar üretir.
+
+   BONUS: Dependabot güncelleme PR'ı 9 dosya yerine tek dosyayı
+   değiştirir -> diff okunabilir kalır.
+-->
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!-- ==========================================================
+       TEST
+       ========================================================== -->
+  <ItemGroup Label="Test">
+    <!-- Test host'u: 'dotnet test' komutunun altyapısı -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+
+    <!-- Test framework'ü: [Fact], [Theory], Assert -->
+    <PackageVersion Include="xunit" Version="2.9.3" />
+
+    <!-- Adaptör: test host'unun xUnit testlerini bulmasını sağlar -->
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+
+    <!-- Kod kapsama ölçümü. Faz 6'da CI'da eşik koyacağız. -->
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+  </ItemGroup>
+
+  <!-- ==========================================================
+       Sonraki fazlarda buraya eklenecekler (henüz kullanılmıyor,
+       YAGNI - ihtiyaç doğmadan paket eklemiyoruz):
+
+       Faz 1: MediatR, FluentValidation, Serilog, EF Core, JWT
+       Faz 2: StackExchange.Redis, Yarp.ReverseProxy
+       Faz 3: MassTransit.RabbitMQ, MongoDB.Driver
+       Faz 5: OpenTelemetry.*, prometheus-net
+       Faz 6: Testcontainers, NSubstitute, NetArchTest
+       ========================================================== -->
+
+</Project>

@@ -1,0 +1,100 @@
+<!--
+  ============================================================
+   Directory.Build.props — TÜM projeler için ortak ayarlar
+  ============================================================
+
+   NASIL ÇALIŞIR?
+   MSBuild her .csproj'yi derlerken klasör ağacında YUKARI doğru
+   çıkarak bu adı arar ve bulduğu ilk dosyayı projenin BAŞINA
+   içe aktarır. Hiçbir .csproj'ye <Import> yazmak gerekmez.
+
+   "Başına" aktarılması önemli: projeler buradaki değerleri
+   kendi <PropertyGroup>'larında EZEBİLİR. Zorla uygulanması
+   gerekeni Directory.Build.targets'a koyardık (o sona aktarılır).
+
+   DİKKAT: <Project> etiketinde Sdk="..." YOK. Bu bir proje
+   dosyası değil, projelere enjekte edilen bir parça.
+
+   DİKKAT 2: Alt klasöre başka bir Directory.Build.props koyarsan
+   MSBuild aramayı orada bitirir; bu dosya artık okunmaz. Zincir
+   kurmak istersen alt dosyada üsttekini elle Import etmen gerekir.
+-->
+<Project>
+
+  <!-- ==========================================================
+       1) DİL VE ÇALIŞMA ZAMANI
+       ========================================================== -->
+  <PropertyGroup>
+    <!-- Tek satır: artık .NET sürümü yükseltmesi burada yapılır,
+         15 ayrı .csproj'de değil. -->
+    <TargetFramework>net10.0</TargetFramework>
+
+    <!-- C# sürümünü BİLEREK yazmıyoruz: TargetFramework onu
+         zaten belirliyor (net10.0 -> C# 14). Elle 'latest' yazmak,
+         TFM yükseltmesinde sürpriz davranışlara yol açar. -->
+
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Null güvenliği artık MERKEZDEN garanti. Yeni bir proje
+         eklendiğinde unutulması imkansız. -->
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!-- ==========================================================
+       2) KOD KALİTESİ / ANALİZ
+       ========================================================== -->
+  <PropertyGroup>
+    <!-- .NET ile gelen analizörler (CA kuralları).
+         Varsayılan seviye 'latest-minimum' yani sadece en kritik
+         kurallar açık. 'latest-recommended' daha geniş bir küme
+         açar: performans, güvenlik ve API tasarımı uyarıları. -->
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+
+    <!-- .editorconfig'deki KOD STİLİ kurallarını (IDExxxx) sadece
+         IDE'de değil DERLEMEDE de uygula. Bu olmadan stil kuralları
+         Visual Studio dışında (örneğin CI'da) sessizce yok sayılır. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!--
+      XML dokümantasyon dosyası üret.
+      İKİ SEBEP:
+       1) Yazdığımız /// yorumları IntelliSense'te görünür hale gelir.
+       2) TEKNİK ZORUNLULUK: Roslyn, IDE0005 (kullanılmayan using)
+          analizini derleme sırasında ancak bu özellik açıkken
+          çalıştırabiliyor. Kapalıysa .editorconfig'deki
+          IDE0005.severity=warning sessizce yok sayılır ve derleyici
+          bunu 'EnableGenerateDocumentationFile' uyarısıyla söyler.
+          (https://github.com/dotnet/roslyn/issues/41640)
+
+      YAN ETKİSİ .editorconfig'de CS1591 ile ele alındı.
+    -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!-- ==========================================================
+       3) UYARILARI HATAYA ÇEVİRME — ama sadece CI'da
+       ========================================================== -->
+  <PropertyGroup>
+    <!--
+      NEDEN KOŞULLU?
+      Uyarıları her yerde hataya çevirmek geliştirmeyi yavaşlatır:
+      bir fikri denerken yarım kalmış kod yüzünden derleme
+      yapamamak sinir bozucudur ve insanları kuralı kapatmaya iter.
+
+      Çözüm: LOCAL'de uyarı uyarı kalır (hızlı deneme),
+             CI'da hata olur (main'e uyarı sızmaz).
+
+      ContinuousIntegrationBuild değişkenini Adım 6'da GitHub
+      Actions workflow'unda set edeceğiz. Bu değişken aynı zamanda
+      derlemenin deterministik olmasını da sağlar.
+    -->
+    <TreatWarningsAsErrors Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</TreatWarningsAsErrors>
+
+    <!-- Derlemenin her seferinde bit bazında aynı çıktıyı üretmesi.
+         Faz 7'de Docker imaj katmanlarının gereksiz yeniden
+         oluşmasını engelleyecek ve "aynı kaynak -> aynı imaj"
+         doğrulaması yapılabilir hale gelecek. -->
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+</Project>

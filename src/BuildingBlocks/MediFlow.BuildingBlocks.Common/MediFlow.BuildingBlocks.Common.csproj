@@ -1,9 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+  <!--
+    Bu dosya bilerek boş.
+    TargetFramework, Nullable, ImplicitUsings ve analiz ayarları
+    kökteki Directory.Build.props dosyasından geliyor.
+
+    Buraya sadece BU PROJEYE ÖZEL olan şeyler yazılır.
+    Bu proje saf C#; hiçbir NuGet paketine bağımlı değil - bu
+    kasıtlı: BuildingBlocks.Common tüm servislerin kullanacağı
+    temel tipleri içerir, bağımlılığı olursa o bağımlılık tüm
+    projeye bulaşır.
+  -->
 
 </Project>
