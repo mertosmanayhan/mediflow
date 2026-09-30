@@ -229,6 +229,35 @@ dotnet_diagnostic.CA1716.severity = none
 dotnet_diagnostic.CS1591.severity = none
 
 # ============================================================
+#  ÜRETİLEN KOD — EF Core migration'ları
+#
+#  Bu dosyaları 'dotnet ef migrations add' üretiyor; biz yazmıyoruz ve
+#  düzeltsek bile bir sonraki migration aynı şekilde üretilir.
+#
+#  KARAR: üretilen kod analiz dışında tutulur.
+#  GEREKÇE: Alternatifler (a) kuralları tüm projede gevşetmek - el yazısı
+#  kodumuz da korumasız kalırdı, (b) her migration'ı elle düzeltmek -
+#  sürdürülemez. Standartları koruyup kapsamını el yazısı koda
+#  daraltmak doğru olan.
+#
+#  'generated_code = true' Roslyn'e "bu dosya üretilmiştir" der ve
+#  analizörlerin çoğu üretilen kodu atlar. Altındaki üç satır, bu
+#  projede fiilen karşılaştığımız kuralları ayrıca kapatıyor.
+#
+#  NOT: .gitattributes'ta da '**/Migrations/** linguist-generated' var -
+#  aynı bilgiyi GitHub'a söylüyoruz. İki araç, tek gerçek.
+# ============================================================
+[**/Migrations/*.cs]
+generated_code = true
+
+# EF eski tarz namespace üretiyor (namespace X { })
+dotnet_diagnostic.IDE0161.severity = none
+# EF kullanılmayan using bırakıyor
+dotnet_diagnostic.IDE0005.severity = none
+# EF sabit dizi argümanı kullanıyor: new[] { "PatientId", "Name" }
+dotnet_diagnostic.CA1861.severity = none
+
+# ============================================================
 #  TEST PROJELERİ — farklı kurallar geçerli
 # ============================================================
 [tests/**/*.cs]

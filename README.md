@@ -57,7 +57,7 @@ Aşağıdaki liste hedeftir; her biri ilgili fazda eklenir
 | [.NET SDK](https://dotnet.microsoft.com/download) | 10.0.200+ | Sürüm `global.json` ile sabitlenmiştir |
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | 24+ | Altyapı servisleri için; en az 4 GB RAM ayrılmış olmalı |
 
-### Üç komut
+### Kurulum
 
 ```bash
 # 1) Ortam değişkenlerini hazırla (gerçek .env repoda değildir)
@@ -66,9 +66,48 @@ cp .env.example .env        # Windows: Copy-Item .env.example .env
 # 2) Altyapıyı başlat (MSSQL, Redis, RabbitMQ, Seq)
 docker compose up -d
 
-# 3) Derle ve testleri çalıştır
+# 3) Veritabanı bağlantı dizesini kullanıcı sırlarına yaz.
+#    Bu değer repoya GİRMEZ; %APPDATA%\Microsoft\UserSecrets altında durur.
+#    Şifre .env dosyasındaki MSSQL_SA_PASSWORD ile aynı olmalı.
+dotnet user-secrets set "ConnectionStrings:PatientProfile" \
+  "Server=localhost,1433;Database=MediFlow.PatientProfile;User Id=sa;Password=<.env'deki şifre>;TrustServerCertificate=True;Encrypt=True" \
+  --project src/Host/MediFlow.Api
+
+# 4) Veritabanı şemasını oluştur
+dotnet tool restore
+dotnet dotnet-ef database update \
+  --project src/Modules/PatientProfile/MediFlow.PatientProfile.Infrastructure \
+  --startup-project src/Host/MediFlow.Api
+
+# 5) Testleri çalıştır
 dotnet test MediFlow.slnx
+
+# 6) API'yi başlat
+dotnet run --project src/Host/MediFlow.Api
 ```
+
+Sonra tarayıcıda **http://localhost:5xxx/scalar** (port konsolda yazar).
+
+### API
+
+| Uç nokta | Ne yapar |
+|---|---|
+| `POST /patients` | Yeni hasta oluşturur → `201` + kimlik |
+| `GET /patients/{id}` | Hastayı getirir → `200`, yoksa `404` |
+| `GET /scalar` | Gezilebilir API arayüzü |
+| `GET /openapi/v1.json` | Makine okunabilir API tanımı |
+
+Hatalar `ProblemDetails` (RFC 9457) biçiminde döner ve makine tarafının
+dallanacağı sabit bir `code` alanı taşır:
+
+```json
+{ "title": "Validation failed", "status": 400,
+  "detail": "First name is required.", "code": "Patient.FirstNameEmpty" }
+```
+
+> ℹ️ Kullanıcı sırları **yalnızca `Development` ortamında** yüklenir. API'yi
+> derlenmiş çıktıdan doğrudan çalıştırıyorsan `ASPNETCORE_ENVIRONMENT=Development`
+> vermen gerekir; `dotnet run` bunu kendisi yapar.
 
 ### Altyapı servisleri
 

@@ -11,10 +11,32 @@
     merkezileştirmenin amacı tam buydu.
   -->
 
+  <PropertyGroup>
+    <!--
+      Yerel geliştirme sırlarının kimliği. Bağlantı dizesi bu kimlikle
+      %APPDATA%\Microsoft\UserSecrets\<id>\secrets.json dosyasında,
+      yani DEPONUN DIŞINDA saklanıyor - kazara commit edilmesi imkansız.
+      'dotnet user-secrets init' bu satırı kendisi ekledi (ve dosyanın
+      biçimini bozdu, elle düzelttik).
+    -->
+    <UserSecretsId>8de10826-3449-4e3a-a132-1dc887cf6ab0</UserSecretsId>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Sürüm yok: Directory.Packages.props'tan geliyor -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
+
+    <!--
+      Migration üretmek için gereken tasarım zamanı paketi.
+      PrivateAssets=all -> bu paket uygulamayla birlikte DAĞITILMAZ ve
+      bu projeye bağımlı olan başka bir projeye de geçmez. Sadece
+      'dotnet ef' komutları çalışırken devrede.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -23,9 +45,10 @@
 
     <!--
       Infrastructure referansı SADECE kayıt (DI) için var.
-      Program.cs "IPatientRepository istendiğinde InMemoryPatientRepository
-      ver" diyebilmek için somut tipi görmek zorunda. Uygulamanın geri kalanı
-      bu tipi hiçbir yerde kullanmaz; hep arayüz üzerinden gider.
+      Program.cs "IPatientRepository istendiğinde EfPatientRepository ver"
+      ve "DbContext'i şu bağlantı dizesiyle kur" diyebilmek için somut
+      tipleri görmek zorunda. Uygulamanın geri kalanı bu tipleri hiçbir
+      yerde kullanmaz; hep arayüz üzerinden gider.
     -->
     <ProjectReference Include="..\..\Modules\PatientProfile\MediFlow.PatientProfile.Infrastructure\MediFlow.PatientProfile.Infrastructure.csproj" />
   </ItemGroup>

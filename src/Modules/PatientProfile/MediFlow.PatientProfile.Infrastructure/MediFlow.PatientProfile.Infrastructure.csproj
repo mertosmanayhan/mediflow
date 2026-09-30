@@ -15,4 +15,8 @@
     <ProjectReference Include="..\MediFlow.PatientProfile.Domain\MediFlow.PatientProfile.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+  </ItemGroup>
+
 </Project>

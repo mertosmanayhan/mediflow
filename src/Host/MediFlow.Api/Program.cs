@@ -3,6 +3,7 @@ using MediFlow.BuildingBlocks.Common;
 using MediFlow.PatientProfile.Application;
 using MediFlow.PatientProfile.Domain;
 using MediFlow.PatientProfile.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,11 +22,35 @@ var builder = WebApplication.CreateBuilder(args);
 //  ÖMÜR (lifetime) seçimleri:
 // ============================================================
 
-// Singleton: uygulama boyunca TEK örnek.
-// Hafızadaki depo için ZORUNLU - her istek kendi deposunu alsaydı
-// kaydettiğin hasta bir sonraki istekte kaybolurdu.
-// (Veritabanına geçtiğimizde bu Scoped olacak; nedenini o zaman göreceğiz.)
-builder.Services.AddSingleton<IPatientRepository, InMemoryPatientRepository>();
+// ---- Veritabanı ----
+//
+// Bağlantı dizesi KODA YAZILMIYOR. Yoksa uygulama anlaşılır bir mesajla
+// durur; sessizce çalışıp ilk istekte tuhaf bir hata vermesinden iyidir.
+// (Faz 0 prensibi: gürültülü hata > sessiz yanlış davranış.)
+string connectionString = builder.Configuration.GetConnectionString("PatientProfile")
+    ?? throw new InvalidOperationException(
+        "ConnectionStrings:PatientProfile tanımlı değil. Yerel geliştirme için: " +
+        "dotnet user-secrets set \"ConnectionStrings:PatientProfile\" \"...\" " +
+        "--project src/Host/MediFlow.Api");
+
+builder.Services.AddDbContext<PatientProfileDbContext>(options =>
+    options.UseSqlServer(connectionString, sqlServer =>
+        // Migration geçmiş tablosu da modülün kendi şemasında dursun;
+        // başka modüller eklendiğinde her biri kendi geçmişini tutar.
+        sqlServer.MigrationsHistoryTable("__EFMigrationsHistory", "PatientProfile")));
+
+// ÖMÜR DEĞİŞTİ: Singleton -> Scoped.
+//
+// Geçen adımda hafızadaki depo Singleton'dı, çünkü tek örnek olmasa
+// veriler kaybolurdu. Şimdi tersi geçerli:
+//   - DbContext değişiklikleri takip eder ve THREAD-SAFE DEĞİLDİR.
+//     Singleton yapsak paralel istekler aynı oturumu paylaşır ve
+//     birbirinin değişikliklerini bozar.
+//   - Veri artık DbContext'te değil veritabanında duruyor; oturumun
+//     istek bitince atılması bir şey kaybettirmiyor.
+//
+// AddDbContext zaten Scoped kaydeder; deposunu da aynı ömre alıyoruz.
+builder.Services.AddScoped<IPatientRepository, EfPatientRepository>();
 
 // Gerçek sistem saati. Testlerde bunun yerine sabit saat veriyorduk;
 // aynı arayüz, farklı dolduran.
