@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    İş akışları (use case) katmanı.
+
+    Domain'i BİLİR, Domain onu bilmez. Ok tek yönlü:
+        Application  ───►  Domain
+
+    Burada da NuGet paketi yok. Veritabanı, HTTP, JSON hâlâ uzakta -
+    bu katman sadece "hangi adım hangi sırayla yapılır"ı bilir.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\MediFlow.PatientProfile.Domain\MediFlow.PatientProfile.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
