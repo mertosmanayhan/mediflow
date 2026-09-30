@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Hasta kurallarının yaşadığı proje.
+
+    DİKKAT: Burada NuGet paketi YOK ve olmayacak. Bu kasıtlı.
+    Bu projede sadece "bir hasta nedir, kuralları nedir" yazılı.
+    Veritabanı, HTTP, JSON - hiçbiri buraya girmeyecek.
+
+    Tek referansı BuildingBlocks.Common: Faz 0'da yazdığımız
+    Result ve Error tiplerini kullanacak.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\MediFlow.BuildingBlocks.Common\MediFlow.BuildingBlocks.Common.csproj" />
+  </ItemGroup>
+
+</Project>
