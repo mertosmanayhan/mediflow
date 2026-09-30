@@ -3,10 +3,14 @@ using MediFlow.BuildingBlocks.Common;
 namespace MediFlow.PatientProfile.Domain;
 
 /// <summary>
-/// A patient. Owns its own rules: an invalid patient cannot be constructed.
+/// A patient. Owns its own rules: an invalid patient cannot be constructed,
+/// and its allergy list cannot be corrupted from outside.
 /// </summary>
 public sealed class Patient
 {
+    // GERÇEK liste burada ve PRIVATE. Dışarıdan erişilemez.
+    private readonly List<Allergy> _allergies = [];
+
     // Kurucu PRIVATE: dışarıdan 'new Patient(...)' yazılamaz.
     // Tek giriş kapısı aşağıdaki Create metodu -> kural atlanamaz.
     private Patient(Guid id, string firstName, string lastName, DateOnly birthDate)
@@ -31,6 +35,20 @@ public sealed class Patient
     /// <c>DateTime</c> kullanmak anlamsız bir "00:00:00" taşımak olurdu.
     /// </summary>
     public DateOnly BirthDate { get; private set; }
+
+    /// <summary>
+    /// Alerjiler - SALT OKUNUR görünüm.
+    /// </summary>
+    /// <remarks>
+    /// <c>AsReadOnly()</c> şart. Sadece dönüş tipini <c>IReadOnlyList</c> yapmak
+    /// yetmez: içerideki <c>List</c>'i olduğu gibi döndürürsek çağıran onu
+    /// <c>List&lt;Allergy&gt;</c>'ye geri çevirip <c>Add</c> çağırabilir ve
+    /// kurallarımızı tamamen atlar. <c>AsReadOnly()</c> o kaçağı kapatır.
+    ///
+    /// Kopya değil, canlı bir sarmalayıcı döndürür - yani liste değişince
+    /// bu görünüm de güncel kalır, ama üzerinden değişiklik yapılamaz.
+    /// </remarks>
+    public IReadOnlyList<Allergy> Allergies => _allergies.AsReadOnly();
 
     /// <summary>
     /// Yeni hasta oluşturur. Kurallara uymazsa nesne HİÇ oluşmaz.
@@ -76,5 +94,43 @@ public sealed class Patient
             birthDate);
 
         return Result.Success(patient);
+    }
+
+    /// <summary>
+    /// Hastanın kaydına bir alerji ekler.
+    /// </summary>
+    /// <param name="name">Alerjen adı. Boş olamaz; boşluklar kırpılır.</param>
+    /// <param name="severity">Reaksiyonun şiddeti.</param>
+    /// <returns>
+    /// Aynı alerji zaten kayıtlıysa veya ad boşsa başarısız sonuç.
+    /// Başarısız durumda liste DEĞİŞMEZ.
+    /// </returns>
+    public Result AddAllergy(string name, AllergySeverity severity)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return Result.Failure(PatientErrors.AllergyNameEmpty);
+        }
+
+        string normalized = name.Trim();
+
+        // Büyük/küçük harf farkı aynı alerjiyi iki kez kaydetmeye yol açmasın:
+        // "Penisilin" ve "PENISILIN" aynı maddedir.
+        //
+        // NOT: OrdinalIgnoreCase Türkçe'nin i/İ ve I/ı kurallarını uygulamaz.
+        // Latin harfli alerjen adları için sorun değil, ama Türkçe metin
+        // karşılaştırması genel bir konu olarak açık bir karar bekliyor
+        // (bkz. journal: collation kararı).
+        bool alreadyExists = _allergies.Any(allergy =>
+            string.Equals(allergy.Name, normalized, StringComparison.OrdinalIgnoreCase));
+
+        if (alreadyExists)
+        {
+            return Result.Failure(PatientErrors.AllergyAlreadyExists);
+        }
+
+        _allergies.Add(new Allergy(normalized, severity));
+
+        return Result.Success();
     }
 }
