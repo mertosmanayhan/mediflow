@@ -21,28 +21,35 @@
    değiştirir -> diff okunabilir kalır.
 -->
 <Project>
-
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-
   <!-- ==========================================================
        TEST
        ========================================================== -->
   <ItemGroup Label="Test">
     <!-- Test host'u: 'dotnet test' komutunun altyapısı -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-
     <!-- Test framework'ü: [Fact], [Theory], Assert -->
     <PackageVersion Include="xunit" Version="2.9.3" />
-
     <!-- Adaptör: test host'unun xUnit testlerini bulmasını sağlar -->
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
-
     <!-- Kod kapsama ölçümü. Faz 6'da CI'da eşik koyacağız. -->
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
   </ItemGroup>
 
+  <!-- ==========================================================
+       WEB / API
+       NOT: Bu iki satırı 'dotnet add package' kendisi yazdı ama
+       alfabetik sıraya göre Test grubunun İÇİNE koydu. Araç dosyanın
+       anlamını bilmiyor, sadece sıralıyor - gruplamayı elle düzelttik.
+       ========================================================== -->
+  <ItemGroup Label="Web">
+    <!-- API'nin kendini tanımlayan OpenAPI belgesini üretmesi için -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+    <!-- O belgeyi tarayıcıda gezilebilir arayüze çeviren araç -->
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.17.12" />
+  </ItemGroup>
   <!-- ==========================================================
        Sonraki fazlarda buraya eklenecekler (henüz kullanılmıyor,
        YAGNI - ihtiyaç doğmadan paket eklemiyoruz):
@@ -53,5 +60,4 @@
        Faz 5: OpenTelemetry.*, prometheus-net
        Faz 6: Testcontainers, NSubstitute, NetArchTest
        ========================================================== -->
-
 </Project>

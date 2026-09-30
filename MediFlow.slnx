@@ -3,10 +3,14 @@
   <Folder Name="/src/BuildingBlocks/">
     <Project Path="src/BuildingBlocks/MediFlow.BuildingBlocks.Common/MediFlow.BuildingBlocks.Common.csproj" />
   </Folder>
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/MediFlow.Api/MediFlow.Api.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/PatientProfile/">
     <Project Path="src/Modules/PatientProfile/MediFlow.PatientProfile.Application/MediFlow.PatientProfile.Application.csproj" />
     <Project Path="src/Modules/PatientProfile/MediFlow.PatientProfile.Domain/MediFlow.PatientProfile.Domain.csproj" />
+    <Project Path="src/Modules/PatientProfile/MediFlow.PatientProfile.Infrastructure/MediFlow.PatientProfile.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/BuildingBlocks/">

@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Uygulamanın tek çalıştırılabilir parçası: HTTP isteklerini karşılar.
+
+    Sdk="Microsoft.NET.Sdk.Web" -> ASP.NET Core çatısını getirir,
+    ayrıca paket eklemek gerekmez.
+
+    Şablon buraya TargetFramework / Nullable / ImplicitUsings yazmıştı;
+    SİLDİK çünkü üçü de Directory.Build.props'tan geliyor. Faz 0'da
+    merkezileştirmenin amacı tam buydu.
+  -->
+
+  <ItemGroup>
+    <!-- Sürüm yok: Directory.Packages.props'tan geliyor -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Scalar.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- İş akışları buradan gelir -->
+    <ProjectReference Include="..\..\Modules\PatientProfile\MediFlow.PatientProfile.Application\MediFlow.PatientProfile.Application.csproj" />
+
+    <!--
+      Infrastructure referansı SADECE kayıt (DI) için var.
+      Program.cs "IPatientRepository istendiğinde InMemoryPatientRepository
+      ver" diyebilmek için somut tipi görmek zorunda. Uygulamanın geri kalanı
+      bu tipi hiçbir yerde kullanmaz; hep arayüz üzerinden gider.
+    -->
+    <ProjectReference Include="..\..\Modules\PatientProfile\MediFlow.PatientProfile.Infrastructure\MediFlow.PatientProfile.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

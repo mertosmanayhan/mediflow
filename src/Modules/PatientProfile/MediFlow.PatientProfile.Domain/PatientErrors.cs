@@ -21,6 +21,9 @@ public static class PatientErrors
     public static readonly Error BirthDateInFuture =
         new("Patient.BirthDateInFuture", "Birth date cannot be in the future.");
 
+    public static readonly Error NotFound =
+        new("Patient.NotFound", "No patient exists with the given id.");
+
     public static readonly Error AllergyNameEmpty =
         new("Patient.AllergyNameEmpty", "Allergy name is required.");
 
