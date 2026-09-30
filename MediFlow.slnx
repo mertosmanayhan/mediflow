@@ -3,8 +3,16 @@
   <Folder Name="/src/BuildingBlocks/">
     <Project Path="src/BuildingBlocks/MediFlow.BuildingBlocks.Common/MediFlow.BuildingBlocks.Common.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/PatientProfile/">
+    <Project Path="src/Modules/PatientProfile/MediFlow.PatientProfile.Domain/MediFlow.PatientProfile.Domain.csproj" />
+  </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/BuildingBlocks/">
     <Project Path="tests/BuildingBlocks/MediFlow.BuildingBlocks.Common.Tests/MediFlow.BuildingBlocks.Common.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Modules/" />
+  <Folder Name="/tests/Modules/PatientProfile/">
+    <Project Path="tests/Modules/PatientProfile/MediFlow.PatientProfile.Domain.Tests/MediFlow.PatientProfile.Domain.Tests.csproj" />
   </Folder>
 </Solution>
