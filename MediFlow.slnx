@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/PatientProfile/">
+    <Project Path="src/Modules/PatientProfile/MediFlow.PatientProfile.Application/MediFlow.PatientProfile.Application.csproj" />
     <Project Path="src/Modules/PatientProfile/MediFlow.PatientProfile.Domain/MediFlow.PatientProfile.Domain.csproj" />
   </Folder>
   <Folder Name="/tests/" />
@@ -13,6 +14,7 @@
   </Folder>
   <Folder Name="/tests/Modules/" />
   <Folder Name="/tests/Modules/PatientProfile/">
+    <Project Path="tests/Modules/PatientProfile/MediFlow.PatientProfile.Application.Tests/MediFlow.PatientProfile.Application.Tests.csproj" />
     <Project Path="tests/Modules/PatientProfile/MediFlow.PatientProfile.Domain.Tests/MediFlow.PatientProfile.Domain.Tests.csproj" />
   </Folder>
 </Solution>
