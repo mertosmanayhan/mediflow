@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Dış dünyaya bağlanan katman: veritabanı, dosya, e-posta...
+    Domain'in beyan ettiği arayüzleri DOLDURUR.
+
+        Domain (arayüz)  ◄───  Infrastructure (gerçek kod)
+
+    Ok Domain'e doğru bakıyor: Infrastructure Domain'i bilir,
+    Domain Infrastructure'ı bilmez. Bu sayede veritabanını
+    değiştirmek Domain'e dokunmadan yapılabilir.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\MediFlow.PatientProfile.Domain\MediFlow.PatientProfile.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
