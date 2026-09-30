@@ -37,12 +37,29 @@
     <!-- Kod kapsama ölçümü. Faz 6'da CI'da eşik koyacağız. -->
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
   </ItemGroup>
+  <!-- ==========================================================
+       VERİ ERİŞİMİ
+       ========================================================== -->
+  <ItemGroup Label="Data">
+    <!-- EF Core'un SQL Server sağlayıcısı: LINQ sorgularını T-SQL'e çevirir -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
+
+    <!--
+      Migration üretmek için gereken TASARIM ZAMANI paketi.
+      Sadece 'dotnet ef' komutları çalışırken kullanılır; uygulamayla
+      birlikte DAĞITILMAZ. Bunu sağlayan PrivateAssets/IncludeAssets
+      ayarları Api projesinin .csproj'sinde - buraya değil oraya ait,
+      çünkü "hangi proje nasıl kullanıyor" bilgisi projeye özeldir.
+      ('dotnet add package' ikisine de yazmıştı, buradakini temizledik.)
+    -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12" />
+  </ItemGroup>
 
   <!-- ==========================================================
        WEB / API
-       NOT: Bu iki satırı 'dotnet add package' kendisi yazdı ama
-       alfabetik sıraya göre Test grubunun İÇİNE koydu. Araç dosyanın
-       anlamını bilmiyor, sadece sıralıyor - gruplamayı elle düzelttik.
+       NOT: 'dotnet add package' eklediği satırları alfabetik sıraya
+       göre ilk ItemGroup'un (Test) İÇİNE koyuyor. Araç dosyanın
+       anlamını bilmiyor, sadece sıralıyor - gruplamayı elle düzeltiyoruz.
        ========================================================== -->
   <ItemGroup Label="Web">
     <!-- API'nin kendini tanımlayan OpenAPI belgesini üretmesi için -->
