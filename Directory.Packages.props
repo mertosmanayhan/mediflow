@@ -35,7 +35,7 @@
     <!-- Adaptör: test host'unun xUnit testlerini bulmasını sağlar -->
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
     <!-- Kod kapsama ölçümü. Faz 6'da CI'da eşik koyacağız. -->
-    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="coverlet.collector" Version="10.1.0" />
   </ItemGroup>
   <!-- ==========================================================
        VERİ ERİŞİMİ
