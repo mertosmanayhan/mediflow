@@ -68,13 +68,30 @@ internal static class ErrorMapping
 
     private static int StatusCodeFor(Error error) => error.Code switch
     {
+        // KİMLİK DOĞRULAMA HATALARI -> 401, 400 DEĞİL.
+        //
+        // Ayrım önemli: 400 "isteğin kendisi bozuk" demek (eksik alan,
+        // yanlış tip). 401 "istek doğru biçimde geldi ama kimliğini
+        // doğrulayamadım" demek. İstemciler bu ikisine farklı tepki verir:
+        // 401'de kullanıcıyı giriş ekranına yönlendirmek veya jetonu
+        // yenilemek gerekir, 400'de formu düzeltmek gerekir.
+        //
+        // Yenileme jetonu hataları da buraya girer - jeton geçersiz,
+        // süresi dolmuş veya yeniden kullanılmış: hepsi "yeniden giriş
+        // yapman gerekiyor" anlamına gelir.
+        var code when code.EndsWith("InvalidCredentials", StringComparison.Ordinal) =>
+            StatusCodes.Status401Unauthorized,
+
+        var code when code.StartsWith("Identity.RefreshToken", StringComparison.Ordinal) =>
+            StatusCodes.Status401Unauthorized,
+
         // "Bir şey bulunamadı" -> 404
         var code when code.EndsWith(".NotFound", StringComparison.Ordinal) =>
             StatusCodes.Status404NotFound,
 
-        // "Zaten var" -> 409 Conflict. 400 değil, çünkü istek BOZUK değil;
-        // sistemin o anki durumuyla çelişiyor.
-        var code when code.EndsWith("AlreadyExists", StringComparison.Ordinal) =>
+        // "Zaten var / zaten kayıtlı" -> 409 Conflict. 400 değil, çünkü
+        // istek BOZUK değil; sistemin o anki durumuyla çelişiyor.
+        var code when code.Contains("Already", StringComparison.Ordinal) =>
             StatusCodes.Status409Conflict,
 
         // Geri kalan her şey geçersiz girdi -> 400
@@ -83,6 +100,7 @@ internal static class ErrorMapping
 
     private static string TitleFor(int status) => status switch
     {
+        StatusCodes.Status401Unauthorized => "Authentication failed",
         StatusCodes.Status404NotFound => "Not found",
         StatusCodes.Status409Conflict => "Conflict",
         _ => "Validation failed",

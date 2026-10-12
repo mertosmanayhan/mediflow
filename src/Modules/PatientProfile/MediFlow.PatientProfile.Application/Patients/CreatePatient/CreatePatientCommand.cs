@@ -1,4 +1,4 @@
-using MediFlow.PatientProfile.Application.Abstractions;
+using MediFlow.BuildingBlocks.Application;
 
 namespace MediFlow.PatientProfile.Application.Patients.CreatePatient;
 

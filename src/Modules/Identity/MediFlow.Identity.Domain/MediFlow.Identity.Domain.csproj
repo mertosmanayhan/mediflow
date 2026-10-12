@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Kimlik kuralları. NuGet paketi YOK - şifreleme kütüphanesi bile burada
+    değil. Domain "şifre nasıl hash'lenir"i bilmez, sadece "hash'lenmiş bir
+    şifre tutulur"u bilir. Hash algoritması bir ALTYAPI kararıdır ve
+    değiştirilebilir olmalıdır.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\MediFlow.BuildingBlocks.Common\MediFlow.BuildingBlocks.Common.csproj" />
+  </ItemGroup>
+
+</Project>

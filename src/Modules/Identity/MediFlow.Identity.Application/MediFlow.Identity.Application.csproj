@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MediFlow.Identity.Application.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\MediFlow.BuildingBlocks.Application\MediFlow.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\MediFlow.Identity.Domain\MediFlow.Identity.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

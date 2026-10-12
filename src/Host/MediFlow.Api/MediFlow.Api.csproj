@@ -25,6 +25,7 @@
   <ItemGroup>
     <!-- Sürüm yok: Directory.Packages.props'tan geliyor -->
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
 
@@ -56,6 +57,10 @@
       yerde kullanmaz; hep arayüz üzerinden gider.
     -->
     <ProjectReference Include="..\..\Modules\PatientProfile\MediFlow.PatientProfile.Infrastructure\MediFlow.PatientProfile.Infrastructure.csproj" />
+
+    <!-- Identity modülü -->
+    <ProjectReference Include="..\..\Modules\Identity\MediFlow.Identity.Application\MediFlow.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Identity\MediFlow.Identity.Infrastructure\MediFlow.Identity.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

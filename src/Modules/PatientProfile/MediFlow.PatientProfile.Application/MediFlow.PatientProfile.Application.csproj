@@ -1,37 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    İş akışları (use case) katmanı.
+    İş akışları (use case) katmanı. Domain'i bilir, Domain onu bilmez.
 
-    Domain'i BİLİR, Domain onu bilmez. Ok tek yönlü:
-        Application  ───►  Domain
-
-    Burada da NuGet paketi yok. Veritabanı, HTTP, JSON hâlâ uzakta -
-    bu katman sadece "hangi adım hangi sırayla yapılır"ı bilir.
+    Komut/sorgu arayüzleri ve pipeline behavior'ları artık
+    BuildingBlocks.Application'da - Identity modülü de aynı altyapıyı
+    kullanıyor, kopyalamak yerine paylaştık.
   -->
 
   <ItemGroup>
     <!--
-      Handler'lar 'internal': dışarıdan kimse onları doğrudan çağırmasın,
-      komut gönderilsin. Ama testlerin onlara erişmesi gerekiyor.
-
-      InternalsVisibleTo, SADECE adı verilen assembly'ye internal tipleri
-      açar. Alternatif handler'ları public yapmaktı - o zaman üretim
-      kodunda da erişilebilir olurlardı ve kapsülleme kararı delinirdi.
-
-      Yani: üretimde kapalı, testte açık.
+      Handler'lar 'internal': dışarıdan doğrudan çağrılmasın, komut
+      gönderilsin. Testlerin erişmesi için sadece test assembly'sine
+      açıyoruz - public yapmak kapsüllemeyi delerdi.
     -->
     <InternalsVisibleTo Include="MediFlow.PatientProfile.Application.Tests" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MediFlow.PatientProfile.Domain\MediFlow.PatientProfile.Domain.csproj" />
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation" />
-    <PackageReference Include="MediatR" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\MediFlow.BuildingBlocks.Application\MediFlow.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\MediFlow.PatientProfile.Domain\MediFlow.PatientProfile.Domain.csproj" />
   </ItemGroup>
 
 </Project>

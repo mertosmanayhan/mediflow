@@ -1,12 +1,18 @@
 <Solution>
   <Folder Name="/src/" />
   <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/MediFlow.BuildingBlocks.Application/MediFlow.BuildingBlocks.Application.csproj" />
     <Project Path="src/BuildingBlocks/MediFlow.BuildingBlocks.Common/MediFlow.BuildingBlocks.Common.csproj" />
   </Folder>
   <Folder Name="/src/Host/">
     <Project Path="src/Host/MediFlow.Api/MediFlow.Api.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/MediFlow.Identity.Application/MediFlow.Identity.Application.csproj" />
+    <Project Path="src/Modules/Identity/MediFlow.Identity.Domain/MediFlow.Identity.Domain.csproj" />
+    <Project Path="src/Modules/Identity/MediFlow.Identity.Infrastructure/MediFlow.Identity.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/PatientProfile/">
     <Project Path="src/Modules/PatientProfile/MediFlow.PatientProfile.Application/MediFlow.PatientProfile.Application.csproj" />
     <Project Path="src/Modules/PatientProfile/MediFlow.PatientProfile.Domain/MediFlow.PatientProfile.Domain.csproj" />
@@ -17,6 +23,9 @@
     <Project Path="tests/BuildingBlocks/MediFlow.BuildingBlocks.Common.Tests/MediFlow.BuildingBlocks.Common.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Modules/" />
+  <Folder Name="/tests/Modules/Identity/">
+    <Project Path="tests/Modules/Identity/MediFlow.Identity.Domain.Tests/MediFlow.Identity.Domain.Tests.csproj" />
+  </Folder>
   <Folder Name="/tests/Modules/PatientProfile/">
     <Project Path="tests/Modules/PatientProfile/MediFlow.PatientProfile.Application.Tests/MediFlow.PatientProfile.Application.Tests.csproj" />
     <Project Path="tests/Modules/PatientProfile/MediFlow.PatientProfile.Domain.Tests/MediFlow.PatientProfile.Domain.Tests.csproj" />
