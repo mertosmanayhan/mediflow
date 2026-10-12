@@ -36,6 +36,11 @@ updates:
     # seni boğabilir.
     open-pull-requests-limit: 5
 
+    # DİKKAT: Buradaki etiketler repo'da ÖNCEDEN var olmak zorunda.
+    # Dependabot etiketi kendisi OLUŞTURMAZ; bulamazsa PR'da
+    # "the following labels could not be found: dependencies" der ve
+    # etiketlemeden geçer. GitHub'ın varsayılan etiketleri arasında
+    # 'dependencies' yok, bu yüzden repo ayarlarından elle eklendi.
     labels:
       - "dependencies"
 
@@ -83,10 +88,26 @@ updates:
     commit-message:
       prefix: "chore(ci)"
 
+    # GRUPLAMA — NuGet bölümüyle AYNI kurallara çekildi.
+    #
+    # BURADA BİR YAPILANDIRMA HATASI VARDI (2026-10-12'de düzeltildi):
+    # update-types filtresi yoktu, bu yüzden MAJOR atlamalar da gruba
+    # giriyordu. Sonuç: tek bir PR'da üç major atlama birden geldi
+    # (checkout v4->v7, setup-dotnet v4->v6, cache v4->v6).
+    #
+    # Neden sorun: major atlama kırıcı değişiklik içerebilir. Üçü aynı
+    # PR'da gelirse CI kırıldığında hangisinin suçlu olduğu belirsiz
+    # kalır ve tek tek denemek için PR'ı elle parçalamak gerekir.
+    #
+    # Artık NuGet'te olduğu gibi: küçük güncellemeler tek PR'da
+    # birleşir, major'lar ayrı ayrı gelir ve tek tek değerlendirilir.
     groups:
       github-actions:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
 # ============================================================
 #  SONRA EKLENECEKLER (henüz o dosyalar yok - YAGNI):
