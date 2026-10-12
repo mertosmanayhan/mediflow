@@ -33,7 +33,7 @@
     <!-- Test framework'ü: [Fact], [Theory], Assert -->
     <PackageVersion Include="xunit" Version="2.9.3" />
     <!-- Adaptör: test host'unun xUnit testlerini bulmasını sağlar -->
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <!-- Kod kapsama ölçümü. Faz 6'da CI'da eşik koyacağız. -->
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
   </ItemGroup>
@@ -65,7 +65,7 @@
     <!-- API'nin kendini tanımlayan OpenAPI belgesini üretmesi için -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
     <!-- O belgeyi tarayıcıda gezilebilir arayüze çeviren araç -->
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.17.12" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.17.14" />
   </ItemGroup>
   <!-- ==========================================================
        Sonraki fazlarda buraya eklenecekler (henüz kullanılmıyor,
