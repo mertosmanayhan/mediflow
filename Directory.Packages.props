@@ -29,11 +29,11 @@
        ========================================================== -->
   <ItemGroup Label="Test">
     <!-- Test host'u: 'dotnet test' komutunun altyapısı -->
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <!-- Test framework'ü: [Fact], [Theory], Assert -->
     <PackageVersion Include="xunit" Version="2.9.3" />
     <!-- Adaptör: test host'unun xUnit testlerini bulmasını sağlar -->
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
     <!-- Kod kapsama ölçümü. Faz 6'da CI'da eşik koyacağız. -->
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
   </ItemGroup>
@@ -65,7 +65,7 @@
     <!-- API'nin kendini tanımlayan OpenAPI belgesini üretmesi için -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
     <!-- O belgeyi tarayıcıda gezilebilir arayüze çeviren araç -->
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.17.13" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.17.14" />
   </ItemGroup>
   <!-- ==========================================================
        Sonraki fazlarda buraya eklenecekler (henüz kullanılmıyor,
