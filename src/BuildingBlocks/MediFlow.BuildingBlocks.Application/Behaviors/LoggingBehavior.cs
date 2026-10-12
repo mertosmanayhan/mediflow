@@ -3,7 +3,7 @@ using MediatR;
 using MediFlow.BuildingBlocks.Common;
 using Microsoft.Extensions.Logging;
 
-namespace MediFlow.PatientProfile.Application.Behaviors;
+namespace MediFlow.BuildingBlocks.Application.Behaviors;
 
 /// <summary>
 /// Her isteği loglar ve süresini ölçer.

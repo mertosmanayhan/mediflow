@@ -29,6 +29,10 @@
        ========================================================== -->
   <ItemGroup Label="Test">
     <!-- Test host'u: 'dotnet test' komutunun altyapısı -->
+    <PackageVersion Include="BCrypt.Net-Next" Version="4.2.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <!-- Test framework'ü: [Fact], [Theory], Assert -->
     <PackageVersion Include="xunit" Version="2.9.3" />
@@ -96,7 +100,6 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
     <!-- O belgeyi tarayıcıda gezilebilir arayüze çeviren araç -->
     <PackageVersion Include="Scalar.AspNetCore" Version="2.17.14" />
-
     <!-- Yapılandırılmış loglama: Serilog + Seq sink'i.
          Hangi log sağlayıcısının kullanıldığı bir HOST kararı, o yüzden
          bu paketler Api katmanında. Application sadece ILogger arayüzünü

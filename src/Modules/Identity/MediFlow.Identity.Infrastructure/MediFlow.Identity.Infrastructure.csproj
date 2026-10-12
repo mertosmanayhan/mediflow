@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <!--
+      BCrypt: şifre hash'leme. KASITLI OLARAK YAVAŞ bir algoritma
+      ("adaptive hash"): iş faktörü artırılarak donanım hızlandıkça
+      yavaşlatılabilir. SHA-256 gibi hızlı hash'ler şifre için YANLIŞ
+      tercihtir - hızlı olmaları kaba kuvvet saldırısını kolaylaştırır.
+    -->
+    <PackageReference Include="BCrypt.Net-Next" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+
+    <!-- JWT üretimi -->
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
+
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MediFlow.Identity.Application\MediFlow.Identity.Application.csproj" />
+    <ProjectReference Include="..\MediFlow.Identity.Domain\MediFlow.Identity.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

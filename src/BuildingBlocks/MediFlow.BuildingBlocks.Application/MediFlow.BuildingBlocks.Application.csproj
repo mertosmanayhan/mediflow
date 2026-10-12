@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Tüm modüllerin paylaştığı UYGULAMA KATMANI altyapısı:
+    komut/sorgu arayüzleri ve pipeline behavior'ları.
+
+    NEDEN BuildingBlocks.Common'A DEĞİL YENİ BİR PROJEYE?
+    Common'a MediatR koysak, Domain katmanları Common'a referans verdiği
+    için MediatR tüm Domain'lere sızardı. Domain'in hiçbir altyapı
+    kütüphanesini tanımaması mimarinin temel kuralı.
+
+    NEDEN ŞİMDİ ÇIKARILDI?
+    Faz 1 Blok 1'de bu kod PatientProfile.Application içindeydi ve
+    yorumunda "ikinci modül gelince buraya taşınacak" yazıyordu.
+    Identity modülü geldi; ikinci kopyayı yazmak yerine taşıdık.
+    İhtiyaç doğmadan soyutlama kurmamanın (YAGNI) karşılığı bu:
+    soyutlama gerçekten iki kullanıcısı olduğunda doğru şekilde kuruldu.
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MediFlow.BuildingBlocks.Common\MediFlow.BuildingBlocks.Common.csproj" />
+  </ItemGroup>
+
+</Project>

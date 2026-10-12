@@ -1,6 +1,6 @@
 using FluentValidation;
+using MediFlow.BuildingBlocks.Application.Behaviors;
 using MediFlow.BuildingBlocks.Common;
-using MediFlow.PatientProfile.Application.Behaviors;
 using MediFlow.PatientProfile.Application.Patients.CreatePatient;
 
 namespace MediFlow.PatientProfile.Application.Tests;

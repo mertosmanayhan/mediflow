@@ -4,7 +4,7 @@ using FluentValidation.Results;
 using MediatR;
 using MediFlow.BuildingBlocks.Common;
 
-namespace MediFlow.PatientProfile.Application.Behaviors;
+namespace MediFlow.BuildingBlocks.Application.Behaviors;
 
 /// <summary>
 /// Her isteği, handler'a ULAŞMADAN ÖNCE doğrular.
