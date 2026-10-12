@@ -21,6 +21,21 @@ public sealed class Patient
         BirthDate = birthDate;
     }
 
+    /// <summary>
+    /// Ad ve soyad için üst sınır.
+    /// </summary>
+    /// <remarks>
+    /// Bu sabit burada çünkü üç yer birden ona ihtiyaç duyuyor: veritabanı
+    /// sütun genişliği, girdi doğrulaması ve ileride arayüz. Üç yere ayrı
+    /// ayrı "100" yazsak biri değişince diğerleri sessizce uyumsuz kalırdı -
+    /// veritabanı 100 kabul ederken doğrulayıcı 150'ye izin verince istek
+    /// doğrulamayı geçip veritabanında patlar.
+    ///
+    /// Domain'de duruyor çünkü "bir hastanın adı en fazla şu kadar uzun
+    /// olur" bir iş kuralı ifadesi. Nerede saklandığıyla ilgili değil.
+    /// </remarks>
+    public const int NameMaxLength = 100;
+
     /// <summary>Kimlik. İki hastanın adı aynı olabilir; onları bu ayırır.</summary>
     public Guid Id { get; }
 

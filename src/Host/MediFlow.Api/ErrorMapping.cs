@@ -4,27 +4,28 @@ using Microsoft.AspNetCore.Mvc;
 namespace MediFlow.Api;
 
 /// <summary>
-/// Domain hatalarını HTTP cevaplarına çevirir.
+/// Domain ve uygulama hatalarını HTTP cevaplarına çevirir.
 /// </summary>
 /// <remarks>
-/// Bu eşleme SADECE burada, API katmanında yaşıyor. Domain'in HTTP diye bir
-/// şeyin varlığından haberi yok - "404" veya "409" kelimesi o katmanda hiç
-/// geçmiyor.
+/// Bu eşleme SADECE burada, API katmanında yaşıyor. Domain'de ve
+/// Application'da "404" veya "409" kelimesi hiç geçmiyor.
 ///
-/// Eşlemeyi hata KODUNA göre yapıyoruz. Faz 0'da Error tipini tasarlarken
-/// "Code makine için, Message insan için" demiştik; işte o kararın karşılığı.
-/// Mesaja bakarak eşleme yapsaydık, bir yazım hatasını düzeltmek HTTP
-/// davranışını bozardı.
+/// Eşleme hata KODUNA göre yapılıyor, mesaja göre değil. Mesajdaki bir
+/// yazım hatasını düzeltmek HTTP davranışını değiştirmemeli.
 /// </remarks>
 internal static class ErrorMapping
 {
     public static IResult ToHttpProblem(this Error error)
     {
+        // Doğrulama hatası özel: içinde BİRDEN FAZLA hata var ve
+        // hepsini cevaba yazmak istiyoruz.
+        if (error is ValidationError validation)
+        {
+            return ValidationProblem(validation);
+        }
+
         int status = StatusCodeFor(error);
 
-        // ProblemDetails, HTTP hata gövdeleri için bir STANDART (RFC 9457).
-        // Kendi JSON formatımızı uydurmuyoruz: istemciler, tarayıcı
-        // araçları ve API test araçları bu formatı zaten tanıyor.
         var problem = new ProblemDetails
         {
             Status = status,
@@ -32,10 +33,35 @@ internal static class ErrorMapping
             Detail = error.Message,
         };
 
-        // Makine tarafının dallanacağı asıl bilgi: kod.
-        // React arayüzü "code === 'Patient.NotFound'" diye kontrol edecek,
-        // Türkçe mesaj metnine bakmayacak.
         problem.Extensions["code"] = error.Code;
+
+        return Results.Problem(problem);
+    }
+
+    /// <summary>
+    /// Doğrulama hatalarını tek cevapta döndürür.
+    /// </summary>
+    /// <remarks>
+    /// Kullanıcıya formdaki TÜM eksikleri bir seferde söylüyoruz. Tek tek
+    /// göstermek ("önce adı düzelt... şimdi soyadı") kötü bir deneyim ve
+    /// gereksiz sunucu turu demek.
+    ///
+    /// 'errors' dizisindeki her eleman makine okunabilir bir 'code' taşıyor,
+    /// böylece arayüz hatayı ilgili form alanının yanında gösterebilir.
+    /// </remarks>
+    private static IResult ValidationProblem(ValidationError validation)
+    {
+        var problem = new ProblemDetails
+        {
+            Status = StatusCodes.Status400BadRequest,
+            Title = "Validation failed",
+            Detail = validation.Message,
+        };
+
+        problem.Extensions["code"] = validation.Code;
+        problem.Extensions["errors"] = validation.Errors
+            .Select(error => new { code = error.Code, message = error.Message })
+            .ToArray();
 
         return Results.Problem(problem);
     }

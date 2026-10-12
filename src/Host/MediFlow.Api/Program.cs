@@ -1,6 +1,10 @@
+using FluentValidation;
+using MediatR;
 using MediFlow.Api;
 using MediFlow.BuildingBlocks.Common;
-using MediFlow.PatientProfile.Application;
+using MediFlow.PatientProfile.Application.Behaviors;
+using MediFlow.PatientProfile.Application.Patients.CreatePatient;
+using MediFlow.PatientProfile.Application.Patients.GetPatientById;
 using MediFlow.PatientProfile.Domain;
 using MediFlow.PatientProfile.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -9,24 +13,8 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // ============================================================
-//  BAĞIMLILIK KAYDI (Dependency Injection)
-//
-//  CreatePatientHandler'ın kurucusu iki şey istiyordu:
-//  bir IPatientRepository ve bir TimeProvider. Onları kimin
-//  vereceğini burada söylüyoruz.
-//
-//  Sonra bir endpoint "bana CreatePatientHandler ver" dediğinde
-//  ASP.NET Core bu listeye bakıp gerekli parçaları kendisi
-//  oluşturup birleştiriyor. Hiçbir yerde elle 'new' yazmıyoruz.
-//
-//  ÖMÜR (lifetime) seçimleri:
+//  VERİTABANI
 // ============================================================
-
-// ---- Veritabanı ----
-//
-// Bağlantı dizesi KODA YAZILMIYOR. Yoksa uygulama anlaşılır bir mesajla
-// durur; sessizce çalışıp ilk istekte tuhaf bir hata vermesinden iyidir.
-// (Faz 0 prensibi: gürültülü hata > sessiz yanlış davranış.)
 string connectionString = builder.Configuration.GetConnectionString("PatientProfile")
     ?? throw new InvalidOperationException(
         "ConnectionStrings:PatientProfile tanımlı değil. Yerel geliştirme için: " +
@@ -35,61 +23,101 @@ string connectionString = builder.Configuration.GetConnectionString("PatientProf
 
 builder.Services.AddDbContext<PatientProfileDbContext>(options =>
     options.UseSqlServer(connectionString, sqlServer =>
-        // Migration geçmiş tablosu da modülün kendi şemasında dursun;
-        // başka modüller eklendiğinde her biri kendi geçmişini tutar.
-        sqlServer.MigrationsHistoryTable("__EFMigrationsHistory", "PatientProfile")));
+    {
+        sqlServer.MigrationsHistoryTable("__EFMigrationsHistory", "PatientProfile");
 
-// ÖMÜR DEĞİŞTİ: Singleton -> Scoped.
-//
-// Geçen adımda hafızadaki depo Singleton'dı, çünkü tek örnek olmasa
-// veriler kaybolurdu. Şimdi tersi geçerli:
-//   - DbContext değişiklikleri takip eder ve THREAD-SAFE DEĞİLDİR.
-//     Singleton yapsak paralel istekler aynı oturumu paylaşır ve
-//     birbirinin değişikliklerini bozar.
-//   - Veri artık DbContext'te değil veritabanında duruyor; oturumun
-//     istek bitince atılması bir şey kaybettirmiyor.
-//
-// AddDbContext zaten Scoped kaydeder; deposunu da aynı ömre alıyoruz.
+        // GEÇİCİ HATA DAYANIKLILIĞI (transient fault handling).
+        //
+        // Veritabanı bağlantısı üretimde DÜZENLİ olarak kopar: ölçekleme,
+        // bakım penceresi, geçici ağ sorunu, bulut sağlayıcısının altyapı
+        // değişikliği. Bunlar arıza değil, normal işletim koşulu.
+        //
+        // Bu ayar, kopan bağlantıyı belirli sayıda ve artan beklemelerle
+        // (exponential backoff) yeniden dener. Yani her ağ hıçkırığı
+        // kullanıcıya 500 olarak dönmez.
+        //
+        // ⚠️ GELEN TUZAK: retry açıkken ELLE transaction açarsan
+        // (BeginTransaction) EF hata verir. Sebebi mantıklı: yeniden
+        // denenen bir işlem transaction'ın neresinden başlayacağını
+        // bilemez. Çözüm, işlemi execution strategy içinde sarmak:
+        //
+        //     var strategy = context.Database.CreateExecutionStrategy();
+        //     await strategy.ExecuteAsync(async () => { ... });
+        //
+        // Bu, sıradaki transaction behavior'ını yazarken karşımıza çıkacak.
+        sqlServer.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorNumbersToAdd: null);
+    }));
+
 builder.Services.AddScoped<IPatientRepository, EfPatientRepository>();
-
-// Gerçek sistem saati. Testlerde bunun yerine sabit saat veriyorduk;
-// aynı arayüz, farklı dolduran.
 builder.Services.AddSingleton(TimeProvider.System);
 
-// Scoped: her HTTP isteği için bir örnek. İş akışları durum tutmadığı
-// için ucuz; istek bitince atılır.
-builder.Services.AddScoped<CreatePatientHandler>();
+// ============================================================
+//  MEDIATOR VE PIPELINE
+// ============================================================
+builder.Services.AddMediatR(configuration =>
+{
+    // Handler'ları assembly taramasıyla bulur. Yeni bir komut eklediğinde
+    // burayı GÜNCELLEMEN GEREKMİYOR - dosyayı yazmak yeterli.
+    //
+    // Bedeli: kayıt çalışma zamanında yapılıyor, derleme zamanında değil.
+    // Handler'ı yazmayı unutursan derleyici uyarmaz; hata isteği
+    // gönderdiğinde çıkar. Bu, mediator yaklaşımının gerçek bir maliyeti.
+    configuration.RegisterServicesFromAssembly(typeof(CreatePatientCommand).Assembly);
 
-// API'nin kendini tanımlayan OpenAPI belgesini üretir.
+    // ⚠️ SIRA ÖNEMLİ. Behavior'lar KAYIT SIRASINA göre iç içe geçiyor:
+    //
+    //   Logging  (en dışta)
+    //     └── Validation
+    //           └── Handler
+    //
+    // Logging'i dışa koymamızın sebebi: ölçtüğü süre doğrulamayı DA
+    // kapsasın ve doğrulamada reddedilen istekler de loglanmış olsun.
+    // Ters sırada olsa, doğrulamadan dönen istekler loga hiç düşmezdi -
+    // yani "kullanıcı neden hata alıyor?" sorusunu cevaplayamazdık.
+    configuration.AddOpenBehavior(typeof(LoggingBehavior<,>));
+    configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
+});
+
+// Doğrulayıcıları da assembly taramasıyla bul.
+// includeInternalTypes: internal doğrulayıcılar da bulunsun.
+builder.Services.AddValidatorsFromAssembly(
+    typeof(CreatePatientCommand).Assembly,
+    includeInternalTypes: true);
+
+// ============================================================
+//  HTTP
+// ============================================================
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// /openapi/v1.json adresinde makine okunabilir API tanımı
 app.MapOpenApi();
-
-// /scalar adresinde insan için gezilebilir arayüz.
-// Buradan POST isteği gönderip deneyebiliyoruz - tarayıcı adres
-// çubuğundan sadece GET yapılabilir.
 app.MapScalarApiReference();
 
-// Kök adres, ne yapması gerektiğini söylesin.
 app.MapGet("/", () => Results.Redirect("/scalar"))
    .ExcludeFromDescription();
 
 // ============================================================
-//  ENDPOINT: yeni hasta oluştur
+//  ENDPOINT'LER
+//
+//  Dikkat: endpoint'ler artık handler'ı DEĞİL, ISender'ı istiyor.
+//  Hangi handler'ın çalışacağını bilmiyorlar - komutu/sorguyu
+//  gönderip sonucu HTTP'ye çeviriyorlar. Api katmanının işi bu kadar.
 // ============================================================
+
+// Komut doğrudan JSON gövdesinden bağlanıyor. Yani komut aynı zamanda dış
+// sözleşme. Alternatif ayrı bir istek tipi + eşleme olurdu; tek istemcimiz
+// olduğu için bu tekrarı yapmıyoruz.
 app.MapPost("/patients", async (
-        CreatePatientRequest request,
-        CreatePatientHandler handler,
+        CreatePatientCommand command,
+        ISender sender,
         CancellationToken cancellationToken) =>
     {
-        Result<Guid> result = await handler.HandleAsync(request, cancellationToken);
+        Result<Guid> result = await sender.Send(command, cancellationToken);
 
-        // Başarıda 201 Created ve yeni kaynağın adresi Location başlığında.
-        // 200 değil 201: HTTP'de "yeni bir şey oluştu"nun karşılığı bu.
-        // Hatada, hata kodundan durum koduna eşleme ErrorMapping'de yapılır.
         return result.IsSuccess
             ? Results.Created($"/patients/{result.Value}", new { id = result.Value })
             : result.Error.ToHttpProblem();
@@ -97,23 +125,16 @@ app.MapPost("/patients", async (
     .WithName("CreatePatient")
     .WithSummary("Yeni hasta kaydı oluşturur");
 
-// ============================================================
-//  ENDPOINT: hastayı kimliğe göre getir
-// ============================================================
-// {id:guid} -> yol kısıtı. Adres /patients/abc gibi geçersiz bir değer
-// içeriyorsa endpoint hiç çalışmaz, doğrudan 404 döner. Guid.Parse
-// hatasını elle yakalamak gerekmiyor.
 app.MapGet("/patients/{id:guid}", async (
         Guid id,
-        IPatientRepository patients,
+        ISender sender,
         CancellationToken cancellationToken) =>
     {
-        Patient? patient = await patients.GetByIdAsync(id, cancellationToken);
+        Result<PatientDto> result = await sender.Send(new GetPatientByIdQuery(id), cancellationToken);
 
-        // Başarı durumunda domain nesnesini değil, DTO'yu döndürüyoruz.
-        return patient is null
-            ? PatientErrors.NotFound.ToHttpProblem()
-            : Results.Ok(PatientResponse.From(patient));
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : result.Error.ToHttpProblem();
     })
     .WithName("GetPatientById")
     .WithSummary("Kimliğe göre hasta getirir");
