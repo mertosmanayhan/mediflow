@@ -11,7 +11,27 @@
   -->
 
   <ItemGroup>
+    <!--
+      Handler'lar 'internal': dışarıdan kimse onları doğrudan çağırmasın,
+      komut gönderilsin. Ama testlerin onlara erişmesi gerekiyor.
+
+      InternalsVisibleTo, SADECE adı verilen assembly'ye internal tipleri
+      açar. Alternatif handler'ları public yapmaktı - o zaman üretim
+      kodunda da erişilebilir olurlardı ve kapsülleme kararı delinirdi.
+
+      Yani: üretimde kapalı, testte açık.
+    -->
+    <InternalsVisibleTo Include="MediFlow.PatientProfile.Application.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MediFlow.PatientProfile.Domain\MediFlow.PatientProfile.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
 </Project>

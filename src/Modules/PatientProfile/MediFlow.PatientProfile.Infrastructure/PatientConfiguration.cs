@@ -37,12 +37,14 @@ internal sealed class PatientConfiguration : IEntityTypeConfiguration<Patient>
         // HasMaxLength olmadan EF nvarchar(max) üretir: indekslenemez ve
         // gereksiz yer kaplar. Uzunluk sınırı bir VERİTABANI kararı,
         // o yüzden Domain'de değil burada.
+        // Uzunluk sabiti Domain'den geliyor - doğrulayıcı da aynı sabiti
+        // kullanıyor. Tek doğruluk kaynağı: ikisi birbirinden sapamaz.
         builder.Property(patient => patient.FirstName)
-            .HasMaxLength(100)
+            .HasMaxLength(Patient.NameMaxLength)
             .IsRequired();
 
         builder.Property(patient => patient.LastName)
-            .HasMaxLength(100)
+            .HasMaxLength(Patient.NameMaxLength)
             .IsRequired();
 
         // DateOnly -> SQL 'date' sütunu. Saat alanı hiç oluşmuyor.
@@ -78,7 +80,7 @@ internal sealed class PatientConfiguration : IEntityTypeConfiguration<Patient>
             allergy.WithOwner().HasForeignKey("PatientId");
 
             allergy.Property(a => a.Name)
-                .HasMaxLength(200)
+                .HasMaxLength(Allergy.NameMaxLength)
                 .IsRequired();
 
             // Severity int olarak saklanıyor (EF'in enum varsayılanı).

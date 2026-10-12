@@ -38,12 +38,44 @@
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
   </ItemGroup>
   <!-- ==========================================================
+       UYGULAMA KATMANI — iş akışı altyapısı
+       ========================================================== -->
+  <ItemGroup Label="Application">
+    <!--
+      Mediator: isteği gönderen ile işleyen arasındaki doğrudan
+      bağımlılığı keser, ayrıca pipeline behavior altyapısını verir.
+
+      LİSANS NOTU: MediatR 13'ten itibaren ticari lisansa geçti
+      (küçük ölçek için ücretsiz katman var). Ücretsiz alternatifler:
+      Wolverine, FastEndpoints veya kendi dispatcher'ını yazmak.
+      İş ilanlarındaki yaygınlığı için bu seçildi.
+    -->
+    <PackageVersion Include="MediatR" Version="14.2.0" />
+    <!-- Girdi doğrulaması: isteğin ŞEKLİ doğru mu?
+         (İş kuralları Domain'de kalır, buraya taşınmaz.) -->
+    <PackageVersion Include="FluentValidation" Version="12.2.0" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" />
+
+    <!--
+      Loglama ARAYÜZLERİ (ILogger<T>). Dikkat: ".Abstractions" paketi.
+
+      Application katmanına paket eklemek normalde şüpheyle bakılır, ama
+      "*.Abstractions" paketleri sadece ARAYÜZ içerir, implementasyon
+      içermez. Yani bu referans "nasıl loglanacağına" değil, "loglama
+      diye bir şey var"a bağımlılık. Hangi log sağlayıcısının kullanıldığı
+      (Blok 2'de Serilog olacak) Api katmanında kararlaştırılır.
+
+      Bu ayrım, Domain'in IPatientRepository'yi tanıyıp EF Core'u
+      tanımamasıyla aynı mantık.
+    -->
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+  </ItemGroup>
+  <!-- ==========================================================
        VERİ ERİŞİMİ
        ========================================================== -->
   <ItemGroup Label="Data">
     <!-- EF Core'un SQL Server sağlayıcısı: LINQ sorgularını T-SQL'e çevirir -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
-
     <!--
       Migration üretmek için gereken TASARIM ZAMANI paketi.
       Sadece 'dotnet ef' komutları çalışırken kullanılır; uygulamayla
@@ -54,7 +86,6 @@
     -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12" />
   </ItemGroup>
-
   <!-- ==========================================================
        WEB / API
        NOT: 'dotnet add package' eklediği satırları alfabetik sıraya

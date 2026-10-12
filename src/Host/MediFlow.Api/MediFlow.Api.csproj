@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <!-- Sürüm yok: Directory.Packages.props'tan geliyor -->
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
 

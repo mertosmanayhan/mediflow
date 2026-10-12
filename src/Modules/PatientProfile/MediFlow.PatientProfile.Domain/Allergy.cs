@@ -27,4 +27,8 @@ public enum AllergySeverity
 /// <see cref="Patient"/> içinde korunuyor: listenin tutarlılığından sorumlu
 /// olan, listeyi tutan nesnedir.
 /// </remarks>
-public sealed record Allergy(string Name, AllergySeverity Severity);
+public sealed record Allergy(string Name, AllergySeverity Severity)
+{
+    /// <summary>Alerjen adı için üst sınır. Bkz. <see cref="Patient.NameMaxLength"/>.</summary>
+    public const int NameMaxLength = 200;
+}
