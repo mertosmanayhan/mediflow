@@ -96,7 +96,7 @@ jobs:
       #     Runner sıfırdan temiz bir makine - repo orada yok.
       # ------------------------------------------------------
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Sadece son commit'i indir (tüm geçmişi değil): daha hızlı.
           # Faz 6'da SonarCloud gibi araçlar tam geçmiş isteyebilir,
@@ -111,7 +111,7 @@ jobs:
       #     SDK sürümünü tek yerden yönetiriz.
       # ------------------------------------------------------
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
@@ -130,7 +130,7 @@ jobs:
       #     kullan (kısmi fayda), sıfırdan indirmekten iyidir.
       # ------------------------------------------------------
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'global.json') }}
