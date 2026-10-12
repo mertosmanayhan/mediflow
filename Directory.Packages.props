@@ -29,7 +29,7 @@
        ========================================================== -->
   <ItemGroup Label="Test">
     <!-- Test host'u: 'dotnet test' komutunun altyapısı -->
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <!-- Test framework'ü: [Fact], [Theory], Assert -->
     <PackageVersion Include="xunit" Version="2.9.3" />
     <!-- Adaptör: test host'unun xUnit testlerini bulmasını sağlar -->
