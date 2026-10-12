@@ -23,7 +23,33 @@ string connectionString = builder.Configuration.GetConnectionString("PatientProf
 
 builder.Services.AddDbContext<PatientProfileDbContext>(options =>
     options.UseSqlServer(connectionString, sqlServer =>
-        sqlServer.MigrationsHistoryTable("__EFMigrationsHistory", "PatientProfile")));
+    {
+        sqlServer.MigrationsHistoryTable("__EFMigrationsHistory", "PatientProfile");
+
+        // GEÇİCİ HATA DAYANIKLILIĞI (transient fault handling).
+        //
+        // Veritabanı bağlantısı üretimde DÜZENLİ olarak kopar: ölçekleme,
+        // bakım penceresi, geçici ağ sorunu, bulut sağlayıcısının altyapı
+        // değişikliği. Bunlar arıza değil, normal işletim koşulu.
+        //
+        // Bu ayar, kopan bağlantıyı belirli sayıda ve artan beklemelerle
+        // (exponential backoff) yeniden dener. Yani her ağ hıçkırığı
+        // kullanıcıya 500 olarak dönmez.
+        //
+        // ⚠️ GELEN TUZAK: retry açıkken ELLE transaction açarsan
+        // (BeginTransaction) EF hata verir. Sebebi mantıklı: yeniden
+        // denenen bir işlem transaction'ın neresinden başlayacağını
+        // bilemez. Çözüm, işlemi execution strategy içinde sarmak:
+        //
+        //     var strategy = context.Database.CreateExecutionStrategy();
+        //     await strategy.ExecuteAsync(async () => { ... });
+        //
+        // Bu, sıradaki transaction behavior'ını yazarken karşımıza çıkacak.
+        sqlServer.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorNumbersToAdd: null);
+    }));
 
 builder.Services.AddScoped<IPatientRepository, EfPatientRepository>();
 builder.Services.AddSingleton(TimeProvider.System);
@@ -82,10 +108,10 @@ app.MapGet("/", () => Results.Redirect("/scalar"))
 //  gönderip sonucu HTTP'ye çeviriyorlar. Api katmanının işi bu kadar.
 // ============================================================
 
+// Komut doğrudan JSON gövdesinden bağlanıyor. Yani komut aynı zamanda dış
+// sözleşme. Alternatif ayrı bir istek tipi + eşleme olurdu; tek istemcimiz
+// olduğu için bu tekrarı yapmıyoruz.
 app.MapPost("/patients", async (
-        // Komut doğrudan JSON gövdesinden bağlanıyor. Yani komut aynı
-        // zamanda dış sözleşme. Alternatif ayrı bir istek tipi + eşleme
-        // olurdu; tek istemcimiz olduğu için bu tekrarı yapmıyoruz.
         CreatePatientCommand command,
         ISender sender,
         CancellationToken cancellationToken) =>
