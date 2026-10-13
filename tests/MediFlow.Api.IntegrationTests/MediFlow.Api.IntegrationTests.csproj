@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+
+    <!--
+      WebApplicationFactory: uygulamayı BELLEKTE, gerçek pipeline'ıyla
+      ayağa kaldırır. Gerçek ağ soketi açılmaz ama middleware, DI,
+      yetkilendirme, model bağlama - hepsi gerçek. Birim testle
+      yakalanamayan entegrasyon hataları burada yakalanır.
+    -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Host\MediFlow.Api\MediFlow.Api.csproj" />
+  </ItemGroup>
+
+</Project>

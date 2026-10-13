@@ -1,6 +1,6 @@
 using System.Globalization;
-using System.Text;
 using FluentValidation;
+using MediFlow.Api.Authorization;
 using MediFlow.Api.Endpoints;
 using MediFlow.Api.Observability;
 using MediFlow.BuildingBlocks.Application.Behaviors;
@@ -9,7 +9,8 @@ using MediFlow.Identity.Infrastructure;
 using MediFlow.PatientProfile.Application.Patients.CreatePatient;
 using MediFlow.PatientProfile.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
 
@@ -55,6 +56,11 @@ try
         // reddedilen istekler loga hiç düşmezdi.
         configuration.AddOpenBehavior(typeof(LoggingBehavior<,>));
         configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
+
+        // Validation'dan SONRA = daha icte. Dogrulama basarisizsa handler
+        // hic cagrilmadigi icin buraya da hic gelinmiyor - kaydedilecek bir
+        // sey olmuyor. Generic kisiti sayesinde SADECE komutlarda calisiyor.
+        configuration.AddOpenBehavior(typeof(UnitOfWorkBehavior<,>));
     });
 
     builder.Services.AddValidatorsFromAssembly(
@@ -65,44 +71,31 @@ try
     // ========================================================
     //  KİMLİK DOĞRULAMA — gelen JWT'yi doğrula
     // ========================================================
-    JwtOptions jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
-        ?? throw new InvalidOperationException("Jwt bölümü yapılandırılmamış.");
-
-    if (string.IsNullOrWhiteSpace(jwt.SigningKey))
-    {
-        throw new InvalidOperationException(
-            "Jwt:SigningKey tanımlı değil. " +
-            "dotnet user-secrets set \"Jwt:SigningKey\" \"<en az 32 karakter>\" " +
-            "--project src/Host/MediFlow.Api");
-    }
-
+    // Doğrulama ayarları JwtBearerOptionsSetup'ta ve IOptions üzerinden
+    // TEMBEL çözülüyor.
+    //
+    // Burada yapılandırmayı doğrudan okumak (GetSection().Get<T>()) bir
+    // hataya yol açmıştı: o okuma değeri O AN donduruyor, jeton üretimi
+    // ise IOptions ile sonradan okuyordu. Integration testinde fabrika
+    // yapılandırmayı sonradan ezdiği için ikisi FARKLI anahtar gördü ve
+    // her istek 401 aldı. IOptions, tüm bileşenlerin aynı değeri
+    // görmesini garanti ediyor.
+    //
+    // Eksik yapılandırma kontrolü de burada değil: IdentityModule'daki
+    // AddOptions<JwtOptions>().Validate(...).ValidateOnStart() yapıyor.
     builder.Services
         .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-            // HER DOĞRULAMA AÇIK, bilerek. Kapatılan her kontrol bir açıktır.
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                // Jetonu BİZ mi ürettik? Başka servisin jetonu kabul edilmesin.
-                ValidateIssuer = true,
-                ValidIssuer = jwt.Issuer,
+        .AddJwtBearer();
 
-                // Jeton BİZE mi verilmiş? Başka API için üretilmiş jeton
-                // burada geçmesin.
-                ValidateAudience = true,
-                ValidAudience = jwt.Audience,
+    builder.Services.ConfigureOptions<JwtBearerOptionsSetup>();
 
-                // İmza geçerli mi? Kapatılırsa herkes kendi jetonunu yazıp
-                // Admin olabilir.
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwt.SigningKey)),
-
-                ValidateLifetime = true,
-
-                // VARSAYILAN 5 DAKİKA - yani 15 dakikalık jeton fiilen 20
-                // dakika yaşar. Saat kaymasına küçük tolerans yeterli.
-                ClockSkew = TimeSpan.FromSeconds(30),
-            });
+    // IZIN BAZLI YETKILENDIRME
+    //
+    // PermissionPolicyProvider politikalari ihtiyac aninda uretiyor, yani
+    // her yeni izin icin baslangicta kayit yazmak gerekmiyor.
+    // Singleton: durum tutmuyor ve her istekte cagriliyor.
+    builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+    builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
     builder.Services.AddAuthorization();
 
@@ -114,6 +107,33 @@ try
     builder.Services.AddProblemDetails();
 
     var app = builder.Build();
+
+    // ---- Gelistirme ortaminda sema ve tohum verisi ----
+    if (app.Environment.IsDevelopment())
+    {
+        // Migration'lari ACILISTA uygula.
+        //
+        // NEDEN SADECE GELISTIRMEDE? Uretimde birden fazla uygulama ornegi
+        // ayni anda acilir ve hepsi birden migration uygulamaya calisirsa
+        // yarisirlar. Uretimde migration, dagitim hattinda AYRI bir adim
+        // olarak ve TEK kez calistirilir (Faz 7'de boyle yapacagiz).
+        // Gelistirmede ise "klonla ve calistir" deneyimi daha degerli.
+        await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
+        {
+            await scope.ServiceProvider
+                .GetRequiredService<PatientProfileDbContext>()
+                .Database.MigrateAsync();
+
+            await scope.ServiceProvider
+                .GetRequiredService<IdentityDbContext>()
+                .Database.MigrateAsync();
+        }
+
+        // Sifirdan kurulan sistemde hic yetkili kullanici olmaz: kendi
+        // kaydolan kullanici "Patient" rolu alir ve hasta YAZMA izni yoktur
+        // (dogru olan bu). Ilk yoneticiyi tohumluyoruz. Idempotent.
+        await IdentitySeeder.SeedAdministratorAsync(app.Services);
+    }
 
     // ---- Middleware sırası ----
     app.UseExceptionHandler();

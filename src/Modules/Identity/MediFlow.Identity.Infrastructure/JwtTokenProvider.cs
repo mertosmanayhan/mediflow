@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using MediFlow.BuildingBlocks.Common;
 using MediFlow.Identity.Application.Abstractions;
 using MediFlow.Identity.Domain;
 using Microsoft.Extensions.Options;
@@ -56,9 +57,26 @@ internal sealed class JwtTokenProvider(IOptions<JwtOptions> options) : ITokenPro
         };
 
         // Roller ÇOĞUL: bir kullanıcının birden fazla rolü olabilir.
-        // ClaimTypes.Role, ASP.NET Core'un [Authorize(Roles = "...")]
-        // kontrolünde baktığı standart iddia adı.
         claims.AddRange(user.Roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+        // İZİNLER DE JETONA YAZILIYOR.
+        //
+        // Alternatif: her istekte kullanıcının rollerine bakıp izinleri
+        // veritabanından çözmek. Jetona yazmak bir istek başına sorgu
+        // tasarrufu demek - 9 servisli bir sistemde her servisin her
+        // istekte yetki sorgusu yapması ciddi yük.
+        //
+        // BEDELİ: izinler jeton üretildiği ANDAKİ hali yansıtır. Yetki
+        // geri alınırsa jeton süresi (15 dk) bitene kadar geçerli kalır.
+        // Access token'ı kısa tutmamızın bir sebebi daha bu.
+        //
+        // Yetkinin ANINDA geri alınması gereken durumlar (hesap askıya
+        // alma gibi) için ayrı bir mekanizma gerekir - ya daha kısa ömür
+        // ya da merkezi bir iptal listesi. Her ikisi de ölçeklenebilirlik
+        // ile güvenlik arasındaki aynı dengeyi başka noktada kuruyor.
+        claims.AddRange(RolePermissions
+            .For(user.Roles)
+            .Select(permission => new Claim(Permissions.ClaimType, permission)));
 
         var descriptor = new SecurityTokenDescriptor
         {

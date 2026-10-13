@@ -1,4 +1,5 @@
 using System.Text;
+using MediFlow.BuildingBlocks.Application;
 using MediFlow.Identity.Application.Abstractions;
 using MediFlow.Identity.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +37,10 @@ public static class IdentityModule
 
         services.AddScoped<IUserRepository, EfUserRepository>();
         services.AddScoped<IRefreshTokenRepository, EfRefreshTokenRepository>();
+
+        // Identity'nin DbContext'i de bir unit of work.
+        services.AddScoped<IUnitOfWork>(serviceProvider =>
+            serviceProvider.GetRequiredService<IdentityDbContext>());
 
         // Hash'leyici durum tutmuyor ve thread-safe -> tek örnek yeter.
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();

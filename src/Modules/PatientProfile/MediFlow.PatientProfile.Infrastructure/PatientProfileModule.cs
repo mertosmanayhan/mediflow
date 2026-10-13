@@ -1,3 +1,5 @@
+using MediFlow.BuildingBlocks.Application;
+using MediFlow.BuildingBlocks.Infrastructure;
 using MediFlow.PatientProfile.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -33,7 +35,19 @@ public static class PatientProfileModule
                 "dotnet user-secrets set \"ConnectionStrings:PatientProfile\" \"...\" " +
                 "--project src/Host/MediFlow.Api");
 
-        services.AddDbContext<PatientProfileDbContext>(options =>
+        // Interceptor'lar tekil: durum tutmuyorlar, sadece TimeProvider
+        // alıyorlar.
+        services.AddSingleton<AuditingInterceptor>();
+        services.AddSingleton<SoftDeleteInterceptor>();
+
+        services.AddDbContext<PatientProfileDbContext>((serviceProvider, options) =>
+        {
+            // Audit alanlarını doldurma ve silme->güncelleme çevirimi
+            // buradan devreye giriyor. Hiçbir handler bunları bilmiyor.
+            options.AddInterceptors(
+                serviceProvider.GetRequiredService<AuditingInterceptor>(),
+                serviceProvider.GetRequiredService<SoftDeleteInterceptor>());
+
             options.UseSqlServer(connectionString, sqlServer =>
             {
                 sqlServer.MigrationsHistoryTable("__EFMigrationsHistory", "PatientProfile");
@@ -45,9 +59,20 @@ public static class PatientProfileModule
                     maxRetryCount: 3,
                     maxRetryDelay: TimeSpan.FromSeconds(5),
                     errorNumbersToAdd: null);
-            }));
+            });
+        });
 
         services.AddScoped<IPatientRepository, EfPatientRepository>();
+
+        // Bu modülün DbContext'i bir unit of work olarak da kaydediliyor.
+        // Pipeline'daki UnitOfWorkBehavior IEnumerable<IUnitOfWork> alıyor
+        // ve kayıtlı tüm modüllerinkini topluyor.
+        //
+        // AYNI örneği döndürüyoruz (yeni bir DbContext değil): aksi halde
+        // handler'ın değişiklik yaptığı oturum ile kaydedilen oturum farklı
+        // olur ve hiçbir şey yazılmaz - sessiz ve teşhisi zor bir hata.
+        services.AddScoped<IUnitOfWork>(serviceProvider =>
+            serviceProvider.GetRequiredService<PatientProfileDbContext>());
 
         return services;
     }

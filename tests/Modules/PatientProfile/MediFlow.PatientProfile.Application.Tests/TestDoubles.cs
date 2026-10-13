@@ -32,6 +32,18 @@ internal sealed class InMemoryPatientRepository : IPatientRepository
         Patient? found = _patients.FirstOrDefault(patient => patient.Id == id);
         return Task.FromResult(found);
     }
+
+    /// <remarks>
+    /// Sahte depo GERÇEKTEN siliyor. Soft delete bir EF interceptor'ı
+    /// tarafından yapılıyor ve bu sahtede EF yok - yani soft delete
+    /// davranışı burada test EDİLEMEZ.
+    ///
+    /// Bu bir eksiklik değil, test piramidinin doğru kullanımı: altyapı
+    /// davranışı birim testle değil, gerçek veritabanına karşı koşan
+    /// integration testle doğrulanır. Sahteyle "soft delete çalışıyor"
+    /// testi yazsak, aslında sahtenin kendisini test etmiş olurduk.
+    /// </remarks>
+    public void Remove(Patient patient) => _patients.Remove(patient);
 }
 
 /// <summary>

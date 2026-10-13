@@ -1,3 +1,4 @@
+using MediFlow.BuildingBlocks.Application;
 using MediFlow.Identity.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -8,7 +9,7 @@ namespace MediFlow.Identity.Infrastructure;
 /// Identity modülünün veritabanı oturumu. Kendi şemasında çalışır.
 /// </summary>
 public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> options)
-    : DbContext(options)
+    : DbContext(options), IUnitOfWork
 {
     internal const string Schema = "Identity";
 

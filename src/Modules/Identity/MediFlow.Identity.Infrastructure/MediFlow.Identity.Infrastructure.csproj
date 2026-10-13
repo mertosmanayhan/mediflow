@@ -19,6 +19,8 @@
   <ItemGroup>
     <ProjectReference Include="..\MediFlow.Identity.Application\MediFlow.Identity.Application.csproj" />
     <ProjectReference Include="..\MediFlow.Identity.Domain\MediFlow.Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\MediFlow.BuildingBlocks.Application\MediFlow.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\MediFlow.BuildingBlocks.Infrastructure\MediFlow.BuildingBlocks.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

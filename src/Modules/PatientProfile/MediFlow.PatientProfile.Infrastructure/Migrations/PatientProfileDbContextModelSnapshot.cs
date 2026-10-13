@@ -32,19 +32,32 @@ namespace MediFlow.PatientProfile.Infrastructure.Migrations
                     b.Property<DateOnly>("BirthDate")
                         .HasColumnType("date");
 
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("DeletedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("LastName", "FirstName");
+                    b.HasIndex("LastName", "FirstName")
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Patients", "PatientProfile");
                 });

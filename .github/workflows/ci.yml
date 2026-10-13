@@ -90,6 +90,50 @@ jobs:
     # sürüyor; 15 dakika bol bol yeterli bir güvenlik ağı.
     timeout-minutes: 15
 
+    # ----------------------------------------------------------
+    #  SERVICE CONTAINER — CI için SQL Server
+    #
+    #  Entegrasyon testlerimiz GERÇEK veritabanı istiyor: EF
+    #  interceptor'ları, global query filter'lar ve migration'lar
+    #  ancak gerçek bir sunucuda doğrulanabilir. InMemory sağlayıcı
+    #  bunların hiçbirini aynı şekilde çalıştırmaz, dolayısıyla
+    #  yanlış güven verir.
+    #
+    #  GitHub "service container" kavramı tam bunun için var:
+    #  job başlamadan önce bu imajı ayağa kaldırır, job'ın ağına
+    #  bağlar, job bitince yok eder. compose.yaml'ın CI karşılığı.
+    #
+    #  ports ile 1433'ü runner'a yayınlıyoruz; böylece testler
+    #  localhost,1433 üzerinden bağlanıyor - lokaldeki ile AYNI
+    #  adres, yani test kodunda ortama özel dallanma yok.
+    #
+    #  MSSQL_COLLATION: ADR-0003'teki kararı CI'da da uyguluyoruz.
+    #  Aksi halde testler Türkçe karakter davranışını üretimden
+    #  FARKLI bir collation üzerinde doğrulardı.
+    #
+    #  Faz 6'da bunu Testcontainers'a taşıyacağız: oradaki fark,
+    #  veritabanını testin KENDİSİNİN ayağa kaldırması - yani aynı
+    #  test lokalde de CI'da da hiçbir dış kuruluma ihtiyaç duymaz.
+    # ----------------------------------------------------------
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: MediFlow_Dev2026!
+          MSSQL_COLLATION: Turkish_100_CI_AS_SC
+        ports:
+          - 1433:1433
+        # Healthcheck olmadan testler sunucu hazır olmadan başlar ve
+        # "connection refused" alır. SQL Server ilk açılışta şema
+        # kurduğu için ~20-30 saniye hazır olmaz.
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P MediFlow_Dev2026! -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 15
+          --health-start-period 30s
+
     steps:
       # ------------------------------------------------------
       #  1) Kodu runner'a indir
@@ -171,15 +215,63 @@ jobs:
       #     --no-build: 5. adımda derledik. Yapılandırma AYNI
       #     olmak zorunda, yoksa derlenmiş çıktıyı bulamaz.
       # ------------------------------------------------------
+      #     --collect "XPlat Code Coverage": coverlet.collector'ı
+      #     devreye alır. Testler koşarken hangi SATIRLARIN ve hangi
+      #     DALLARIN (if/else'in iki kolu) çalıştığını kaydeder ve
+      #     her test projesi için bir Cobertura XML'i üretir.
+      #
+      #     Kapsama ORANI bir kalite ölçüsü DEĞİL, bir keşif aracı:
+      #     %100 kapsama hiçbir şey kanıtlamaz (her satırı çağırıp
+      #     hiç assert yazmayan test de %100 verir). Faydası tersten:
+      #     hiç dokunulmayan kod bloklarını gösterir. O yüzden burada
+      #     bir eşik KOYMUYORUZ - eşik koymak insanları anlamsız test
+      #     yazmaya iter. Faz 6'da kritik katmanlar için koyacağız.
       - name: Test
         run: >-
           dotnet test MediFlow.slnx
           --no-build
           --configuration ${{ env.BUILD_CONFIGURATION }}
           --verbosity normal
+          --collect "XPlat Code Coverage"
+          --results-directory ${{ github.workspace }}/TestResults
 
       # ------------------------------------------------------
-      #  7) Biçimlendirme kontrolü
+      #  7) Kapsama raporunu birleştir ve özetle
+      #
+      #     Beş test projesi beş ayrı Cobertura dosyası üretti;
+      #     ReportGenerator bunları TEK rapora birleştirir.
+      #
+      #     if: ${{ !cancelled() }} -> testler kırıkken de o ana
+      #     kadarki kapsamayı görelim.
+      # ------------------------------------------------------
+      - name: Coverage report
+        if: ${{ !cancelled() }}
+        run: |
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+          reportgenerator \
+            -reports:"${{ github.workspace }}/TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"${{ github.workspace }}/CoverageReport" \
+            -reporttypes:"Html;MarkdownSummaryGithub;TextSummary"
+
+      # GITHUB_STEP_SUMMARY: bu dosyaya yazdığın markdown, Actions
+      # çalıştırma sayfasının en üstünde render edilir. Kapsamayı
+      # görmek için artifact indirmek gerekmiyor - tek bakışta orada.
+      - name: Publish coverage to job summary
+        if: ${{ !cancelled() }}
+        run: cat "${{ github.workspace }}/CoverageReport/SummaryGithub.md" >> "$GITHUB_STEP_SUMMARY"
+
+      # Gezilebilir HTML rapor: hangi SATIRIN test edilmediğini
+      # satır satır gösterir. Asıl değer burada.
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ${{ github.workspace }}/CoverageReport
+          retention-days: 7
+
+      # ------------------------------------------------------
+      #  8) Biçimlendirme kontrolü
       #
       #     if: ${{ !cancelled() }}
       #     Varsayılan davranış: bir adım başarısız olursa
@@ -199,9 +291,9 @@ jobs:
 # ============================================================
 #  SONRAKİ FAZLARDA BU DOSYAYA EKLENECEKLER:
 #
-#  Faz 6: kod kapsama eşiği, CodeQL, Trivy imaj taraması,
-#         Testcontainers ile integration testler, test sonucu
-#         artifact'ı, 9 servis için matrix + path filter
+#  Faz 6: kritik katmanlar için kapsama EŞİĞİ, CodeQL, Trivy imaj
+#         taraması, Testcontainers ile integration testler, test
+#         sonucu artifact'ı, 9 servis için matrix + path filter
 #  Faz 7: Docker imajı derle -> GHCR'a push -> AWS'ye deploy
 #         (ayrı workflow, OIDC ile)
 # ============================================================

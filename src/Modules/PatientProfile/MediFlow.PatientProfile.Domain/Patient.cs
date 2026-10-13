@@ -6,7 +6,7 @@ namespace MediFlow.PatientProfile.Domain;
 /// A patient. Owns its own rules: an invalid patient cannot be constructed,
 /// and its allergy list cannot be corrupted from outside.
 /// </summary>
-public sealed class Patient
+public sealed class Patient : IAuditable, ISoftDeletable
 {
     // GERÇEK liste burada ve PRIVATE. Dışarıdan erişilemez.
     private readonly List<Allergy> _allergies = [];
@@ -50,6 +50,20 @@ public sealed class Patient
     /// <c>DateTime</c> kullanmak anlamsız bir "00:00:00" taşımak olurdu.
     /// </summary>
     public DateOnly BirthDate { get; private set; }
+
+    // ---- Audit ve soft delete alanları ----
+    //
+    // Hepsi SALT OKUNUR ve değerlerini bir EF interceptor yazıyor.
+    // Domain kodu bunlara hiç dokunmuyor; iş kuralı değil altyapı
+    // meta verisi. Setter açmak gerekmiyor çünkü interceptor EF'in
+    // Property API'si üzerinden yazıyor - kapsülleme bozulmuyor.
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public DateTimeOffset? UpdatedAtUtc { get; private set; }
+
+    public bool IsDeleted { get; private set; }
+
+    public DateTimeOffset? DeletedAtUtc { get; private set; }
 
     /// <summary>
     /// Alerjiler - SALT OKUNUR görünüm.

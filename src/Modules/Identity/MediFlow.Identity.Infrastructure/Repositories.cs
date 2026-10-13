@@ -3,12 +3,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MediFlow.Identity.Infrastructure;
 
+/// <remarks>
+/// SaveChanges ARTIK YOK. Yazma işini pipeline'daki UnitOfWorkBehavior
+/// yapıyor; repository'nin işi değişikliği bildirmek.
+///
+/// Bu değişiklik en çok yenileme akışında işe yarıyor: orada TEK istekte
+/// eski jeton iptal ediliyor VE yenisi ekleniyor. Önceden bunlar ayrı ayrı
+/// yazılıyordu - arada bir hata olsa eski jeton iptal, yeni jeton yok
+/// kalırdı ve kullanıcı oturumunu tamamen kaybederdi. Artık ikisi tek
+/// SaveChanges ile, yani tek transaction'da yazılıyor.
+/// </remarks>
 internal sealed class EfUserRepository(IdentityDbContext context) : IUserRepository
 {
-    public async Task AddAsync(User user, CancellationToken cancellationToken = default)
+    public Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
         context.Users.Add(user);
-        await context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
     public async Task<User?> GetByEmailAsync(Email email, CancellationToken cancellationToken = default) =>
@@ -50,22 +60,4 @@ internal sealed class EfRefreshTokenRepository(IdentityDbContext context) : IRef
             token.Revoke(nowUtc);
         }
     }
-
-    /// <summary>
-    /// Bekleyen değişiklikleri yazar.
-    /// </summary>
-    /// <remarks>
-    /// NEDEN AddAsync İÇİNDE SaveChanges ÇAĞRILMIYOR?
-    /// Rotasyon akışı TEK bir işlemde iki şey yapıyor: eski jetonu iptal
-    /// etmek ve yenisini eklemek. İkisi ayrı ayrı yazılırsa arada bir hata
-    /// olursa tutarsız durum kalır (eski iptal, yeni yok -> kullanıcı
-    /// oturumunu kaybeder).
-    ///
-    /// Bu, Unit of Work deseninin ilk somut ihtiyacı. Şimdilik kayıt
-    /// sınıfı SaveChanges'i ayrı bir metot olarak sunuyor; Blok 5'te bunu
-    /// pipeline'daki bir transaction behavior'a taşıyacağız ve handler'lar
-    /// SaveChanges'i hiç çağırmayacak.
-    /// </remarks>
-    public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
-        await context.SaveChangesAsync(cancellationToken);
 }

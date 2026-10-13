@@ -49,3 +49,5 @@ Değiştirmesi **pahalı** olan kararlar için:
 | [0001](0001-modular-monolith-first.md) | Modüler monolitle başla, mikroservise evril | Accepted |
 | [0002](0002-modules-then-services-layout.md) | Modüller `src/Modules/`, ayrılan servisler `src/Services/` | Accepted |
 | [0003](0003-turkish-database-collation.md) | Veritabanı collation'ı `Turkish_100_CI_AS_SC` | Accepted |
+| [0004](0004-permission-based-authorization.md) | Yetkilendirme rol bazlı değil, izin bazlı | Accepted |
+| [0005](0005-soft-delete-and-auditing.md) | Soft delete + audit alanları interceptor ile | Accepted |

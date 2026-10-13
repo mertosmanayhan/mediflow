@@ -30,8 +30,6 @@ public interface IRefreshTokenRepository
     /// dışarıda kalır.
     /// </remarks>
     Task RevokeAllForUserAsync(Guid userId, DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
-
-    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>
