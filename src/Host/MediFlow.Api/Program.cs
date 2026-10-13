@@ -39,8 +39,11 @@ try
     // ========================================================
     //  MODÜLLER — her biri kendi DI kaydını yapıyor
     // ========================================================
-    builder.Services.AddPatientProfileModule(builder.Configuration);
-    builder.Services.AddIdentityModule(builder.Configuration);
+    // Modüller yapılandırmayı KENDİLERİ, servis sağlayıcıdan tembel
+    // okuyor; buradan IConfiguration geçmiyoruz. Gerekçe
+    // PatientProfileModule'ün üstünde yazılı (çok erken okuma hatası).
+    builder.Services.AddPatientProfileModule();
+    builder.Services.AddIdentityModule();
 
     builder.Services.AddSingleton(TimeProvider.System);
 

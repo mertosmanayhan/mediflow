@@ -22,19 +22,32 @@ namespace MediFlow.PatientProfile.Infrastructure;
 ///
 /// Bu, "composition root" fikrinin modüler hali: nesne grafiği tek bir
 /// yerde kurulur, ama her modül kendi parçasını tanımlar.
+///
+/// ⚠️ BU METOT NEDEN <c>IConfiguration</c> ALMIYOR?
+///
+/// Önce alıyordu ve bağlantı dizesini kayıt anında okuyordu. Bu HEMEN
+/// (eager) bir okumadır ve iki hataya yol açtı:
+///
+///  1. CI'da bağlantı dizesi user-secrets'ta olduğu için okunamıyor ve
+///     uygulama hiç ayağa kalkmıyordu.
+///  2. Daha sinsisi: <c>WebApplicationFactory</c> yapılandırmayı Program
+///     bu satırı çalıştırdıktan SONRA eziyor. Yani entegrasyon testleri
+///     testin verdiği bağlantı dizesini değil, GELİŞTİRME veritabanını
+///     kullanıyordu. Testler yeşildi - ama yanlış veritabanında.
+///
+/// Çözüm: bağlantı dizesi <c>AddDbContext</c> lambda'sının İÇİNDE,
+/// servis sağlayıcıdan <c>IConfiguration</c> çözülerek okunuyor. O
+/// lambda DbContext ilk kez istendiğinde çalışıyor, yani yapılandırma
+/// artık kesinleşmiş durumda.
+///
+/// Metodun <c>IConfiguration</c> parametresini KALDIRMAK bilinçli:
+/// almadığın bir şeyi çok erken okuyamazsın. Hatayı imkânsız kılmak,
+/// hatırlamaya çalışmaktan güvenli.
 /// </remarks>
 public static class PatientProfileModule
 {
-    public static IServiceCollection AddPatientProfileModule(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    public static IServiceCollection AddPatientProfileModule(this IServiceCollection services)
     {
-        string connectionString = configuration.GetConnectionString("PatientProfile")
-            ?? throw new InvalidOperationException(
-                "ConnectionStrings:PatientProfile tanımlı değil. " +
-                "dotnet user-secrets set \"ConnectionStrings:PatientProfile\" \"...\" " +
-                "--project src/Host/MediFlow.Api");
-
         // Interceptor'lar tekil: durum tutmuyorlar, sadece TimeProvider
         // alıyorlar.
         services.AddSingleton<AuditingInterceptor>();
@@ -47,6 +60,14 @@ public static class PatientProfileModule
             options.AddInterceptors(
                 serviceProvider.GetRequiredService<AuditingInterceptor>(),
                 serviceProvider.GetRequiredService<SoftDeleteInterceptor>());
+
+            string connectionString = serviceProvider
+                .GetRequiredService<IConfiguration>()
+                .GetConnectionString("PatientProfile")
+                ?? throw new InvalidOperationException(
+                    "ConnectionStrings:PatientProfile tanımlı değil. " +
+                    "dotnet user-secrets set \"ConnectionStrings:PatientProfile\" \"...\" " +
+                    "--project src/Host/MediFlow.Api");
 
             options.UseSqlServer(connectionString, sqlServer =>
             {

@@ -31,7 +31,7 @@ ikinci kullanıcı olunca `BuildingBlocks.Application`'a çıktı.
 
 ## Nerede tıkandık
 
-Bu bölüm bu dosyanın asıl değeri. Sekiz gerçek olay:
+Bu bölüm bu dosyanın asıl değeri. Dokuz gerçek olay:
 
 ### 1. `init`-only property sessizce bağlanmıyor
 
@@ -120,7 +120,58 @@ iki farklı zamanda okuyan iki bileşen, farklı değer görebilir. Ve bu hatay�
 ikisinin farklı değer gördüğünü göremez. Entegrasyon testinin varlık sebebi
 tam olarak bu.
 
-### 6. İşletim hatası 400 dönüyordu, 401 değil
+### 6. Aynı hata ikinci kez: testler GELİŞTİRME veritabanında koşuyormuş
+
+5. olaydaki eager/lazy hatasını düzelttim, testler yeşil oldu, PR açtım.
+**CI kırmızı döndü.** Yerelde geçen testler CI'da `Test` adımında patladı.
+
+İlk şüphem SQL Server service container'ıydı; `sqlcmd` yolunu ve healthcheck'i
+doğruladım, sorun orada değildi. Sonra bağlantı dizelerinin nerede durduğunu
+kontrol ettim: **user-secrets'ta.** CI'da user-secrets yoktur,
+`appsettings.json`'da da yoktu → `GetConnectionString` null → modül kaydı
+patlıyor.
+
+Ama veritabanı listesine bakınca çok daha kötüsü çıktı:
+
+```
+MediFlow.PatientProfile
+MediFlow.Identity
+```
+
+`MediFlow.PatientProfile.Tests` ve `MediFlow.Identity.Tests` **hiç
+oluşturulmamış**. Yani entegrasyon testleri, test fabrikasının verdiği
+bağlantı dizesini hiç kullanmamış — doğrudan **geliştirme veritabanına**
+yazıyorlardı. Testler yeşildi, ama yanlış veritabanında.
+
+**Sebep 5. olayın birebir aynısı, ikinci bir yerde:** modüller bağlantı
+dizesini DI kaydı anında, yani `builder.Configuration`'dan **hemen**
+okuyordu. `WebApplicationFactory` yapılandırmayı bu satırdan *sonra* eziyor.
+
+**Çözüm iki parçalı.** Bağlantı dizesi artık `AddDbContext` lambda'sının
+içinde, servis sağlayıcıdan `IConfiguration` çözülerek okunuyor — o lambda
+DbContext ilk istendiğinde çalışıyor, yapılandırma o anda kesinleşmiş
+durumda. Ve modül metotları artık `IConfiguration` parametresi **almıyor**:
+
+```csharp
+services.AddPatientProfileModule();   // önce (builder.Configuration) alıyordu
+```
+
+**Ders — ve bu fazın en değerli dersi bu:** aynı hatayı iki ayrı yerde
+yaptım. İlkini düzeltirken "tamam, anladım" dedim ve *deseni* aramadım.
+Bir hatayı düzeltmek yetmiyor; **aynı hatanın başka nerede olduğunu**
+aramak gerekiyor.
+
+İkinci ders: düzeltmeyi *imkânsız kılmak* > hatırlamaya çalışmak. Metot
+`IConfiguration` almadığı sürece onu çok erken okuyamam. Bu yüzden
+parametreyi kaldırdım, "dikkat et" yorumu yazmakla yetinmedim.
+
+Üçüncü ders: **yeşil test, doğru test demek değil.** Testler geçiyordu
+çünkü geliştirme veritabanı da aynı şemaya sahipti. Testin *ne üzerinde*
+koştuğunu doğrulamak, sonucuna bakmak kadar önemli. Düzeltmenin kanıtı
+testlerin yeşil olması değil, `sys.databases`'te `.Tests` veritabanlarının
+görünmesiydi.
+
+### 7. İşletim hatası 400 dönüyordu, 401 değil
 
 Yanlış şifreyle giriş denemesi `400 Bad Request` dönüyordu. Yanlış: 400
 "isteğin biçimi bozuk" demek; burada biçim doğru, **kimlik** doğrulanamadı.
@@ -131,7 +182,7 @@ kodlar → 409 yapıldı.
 **Ders:** HTTP durum kodu bir sözleşme. İstemci 400'ü "isteğimi düzelt",
 401'i "giriş yap" diye yorumluyor; yanlış kod istemciyi yanlış davranışa iter.
 
-### 7. `PrimitiveCollection` olmadan `User.Roles` migration'ı patlıyor
+### 8. `PrimitiveCollection` olmadan `User.Roles` migration'ı patlıyor
 
 `Navigation 'User.Roles' was not found` hatası. `Roles` bir `List<string>`
 ve arkasında field var; EF onu navigation sanıp ilişkili entity aradı.
@@ -142,7 +193,7 @@ ve arkasında field var; EF onu navigation sanıp ilişkili entity aradı.
 EF'in varsayılan keşfi yetmiyor; eşlemeyi açıkça söylemek gerekiyor. Anemic
 modelde bu sorun hiç çıkmaz — zengin modelin bedeli bu.
 
-### 8. İfade içine yazılan yorum `dotnet format`'ı kırıyor
+### 9. İfade içine yazılan yorum `dotnet format`'ı kırıyor
 
 Bu faz boyunca ~5 kez tekrarlandı. Ternary'nin ortasına, metot zincirinin
 arasına veya expression-bodied member'ın `=>`'sinden sonra yazılan yorum,

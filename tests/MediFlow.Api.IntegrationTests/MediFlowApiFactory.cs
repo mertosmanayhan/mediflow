@@ -29,7 +29,11 @@ namespace MediFlow.Api.IntegrationTests;
 /// </remarks>
 public sealed class MediFlowApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private const string ServerConnection = "Server=localhost,1433;User Id=sa;Password=MediFlow_Dev2026!;TrustServerCertificate=True;Encrypt=True";
+    // 127.0.0.1, "localhost" DEĞİL: CI runner'ında localhost önce IPv6
+    // (::1) olarak çözülebiliyor, service container'ın yayınladığı port
+    // ise IPv4'te duruyor - sonuç "connection refused". Adresi sabitlemek
+    // bu belirsizliği ortadan kaldırıyor.
+    private const string ServerConnection = "Server=127.0.0.1,1433;User Id=sa;Password=MediFlow_Dev2026!;TrustServerCertificate=True;Encrypt=True";
 
     internal const string AdminEmail = "admin@mediflow.test";
     internal const string AdminPassword = "YoneticiTestSifresi2026!";
