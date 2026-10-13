@@ -51,8 +51,24 @@ internal sealed class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.Property(patient => patient.BirthDate)
             .IsRequired();
 
-        // Ada göre arama yapacağız (Faz 1 ilerisi), indeks ekliyoruz.
-        builder.HasIndex(patient => new { patient.LastName, patient.FirstName });
+        // Audit alanları. Interceptor dolduruyor; domain dokunmuyor.
+        builder.Property(patient => patient.CreatedAtUtc).IsRequired();
+        builder.Property(patient => patient.UpdatedAtUtc);
+
+        // Soft delete işaretleri.
+        builder.Property(patient => patient.IsDeleted).IsRequired();
+        builder.Property(patient => patient.DeletedAtUtc);
+
+        // Ada göre arama yapacağız; indeks FİLTRELİ.
+        //
+        // NEDEN FİLTRELİ (WHERE IsDeleted = 0)?
+        // Global query filter her sorguya "IsDeleted = 0" eklediği için
+        // indeksin silinmiş satırları taşıması boşa yer ve boşa bakım.
+        // Filtreli indeks sadece canlı kayıtları içeriyor: daha küçük,
+        // daha hızlı. Soft delete'in bedellerinden birini bu şekilde
+        // hafifletiyoruz.
+        builder.HasIndex(patient => new { patient.LastName, patient.FirstName })
+            .HasFilter("[IsDeleted] = 0");
 
         // ============================================================
         //  ALERJİLER — "owned" (sahip olunan) koleksiyon

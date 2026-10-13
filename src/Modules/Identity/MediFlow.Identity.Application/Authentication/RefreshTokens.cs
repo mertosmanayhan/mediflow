@@ -60,7 +60,6 @@ internal sealed class RefreshTokensCommandHandler(
         if (existing.IsRevoked)
         {
             await refreshTokens.RevokeAllForUserAsync(existing.UserId, nowUtc, cancellationToken);
-            await refreshTokens.SaveChangesAsync(cancellationToken);
 
             return Result.Failure<AuthenticationResponse>(IdentityErrors.RefreshTokenReused);
         }
@@ -76,7 +75,6 @@ internal sealed class RefreshTokensCommandHandler(
         {
             // Jeton geçerli ama kullanıcı silinmiş. Jetonu da kapat.
             existing.Revoke(nowUtc);
-            await refreshTokens.SaveChangesAsync(cancellationToken);
 
             return Result.Failure<AuthenticationResponse>(IdentityErrors.RefreshTokenNotFound);
         }
@@ -94,7 +92,6 @@ internal sealed class RefreshTokensCommandHandler(
             tokenProvider.RefreshTokenLifetime);
 
         await refreshTokens.AddAsync(replacement, cancellationToken);
-        await refreshTokens.SaveChangesAsync(cancellationToken);
 
         AccessToken accessToken = tokenProvider.CreateAccessToken(user);
 

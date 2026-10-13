@@ -33,4 +33,19 @@ public interface IPatientRepository
 
     /// <summary>Kimliğe göre hasta getirir; yoksa <c>null</c>.</summary>
     Task<Patient?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Hastayı siler.
+    /// </summary>
+    /// <remarks>
+    /// Arayüz "sil" diyor. Gerçekte SOFT DELETE yapılıyor - kayıt
+    /// işaretleniyor, satır silinmiyor. Ama bu bir ALTYAPI kararı ve
+    /// domain'i ilgilendirmiyor: yarın gerçekten silmeye karar verirsek
+    /// bu arayüz değişmez.
+    ///
+    /// Kaydetme işini bu metot YAPMIYOR - pipeline'daki UnitOfWorkBehavior
+    /// yapıyor. Böylece bir komut birden fazla değişiklik yapsa hepsi tek
+    /// SaveChanges ile, yani tek transaction'da yazılıyor.
+    /// </remarks>
+    void Remove(Patient patient);
 }

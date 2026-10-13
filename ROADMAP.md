@@ -236,19 +236,31 @@ sorun değil, **faz sırası** önemli.
 
 **Öğrenilen:** Clean Architecture, CQRS + MediatR, EF Core, JWT, FluentValidation, unit test.
 
-- [ ] Domain modelleme: `Patient` aggregate, `Allergy`/`ChronicCondition` value object'leri
-- [ ] CQRS: `CreatePatientCommand`, `GetPatientByIdQuery` + handler'lar
-- [ ] MediatR pipeline behavior'ları: **Validation, Logging, Transaction, Performance**
+- [x] Domain modelleme: `Patient` aggregate, `Allergy` value object'i
+      *(`ChronicCondition` Faz 2'ye bırakıldı — `Allergy` deseni kurulduktan
+      sonra ikincisi tekrardan başka bir şey öğretmiyordu)*
+- [x] CQRS: `CreatePatientCommand`, `GetPatientByIdQuery`, `DeletePatientCommand` + handler'lar
+- [x] MediatR pipeline behavior'ları: **Validation, Logging, UnitOfWork**
+      *(Performance ayrı behavior olarak yazılmadı: `LoggingBehavior` süreyi
+      zaten ölçüyor ve eşik aşımını uyarı seviyesinde logluyor)*
 - [x] Result pattern (exception'la flow control yapma) *(Faz 0'da yapıldı)*
-- [ ] EF Core: migration, seed, global query filter (soft delete), audit alanları
-- [ ] JWT: access (15 dk) + refresh token (7 gün, **rotation + reuse detection**)
-- [ ] Role + **permission-based authorization** (`[HasPermission("patient.read")]`)
-- [ ] Serilog + correlation ID middleware, global exception handler (ProblemDetails)
-- [ ] Unit testler: domain kuralları %100, handler'lar
-- [ ] CI'a coverage raporu ekle
+- [x] EF Core: migration, seed, global query filter (soft delete), audit alanları
+      *(interceptor ile — ADR-0005)*
+- [x] JWT: access (15 dk) + refresh token (7 gün, **rotation + reuse detection**)
+- [x] **Permission-based authorization** (`.RequirePermission("patients:write")`)
+      *(rol bazlı bilinçli olarak reddedildi — ADR-0004)*
+- [x] Serilog + correlation ID middleware, global exception handler (ProblemDetails)
+- [x] Unit testler: domain kuralları, handler'lar *(56 unit test)*
+- [x] **Entegrasyon testleri**: `WebApplicationFactory` ile uçtan uca
+      *(8 test; planda yoktu, eager/lazy yapılandırma hatasını bunlar yakaladı)*
+- [x] CI'a coverage raporu ekle *(+ CI'a SQL Server service container)*
 
-**DoD:** Swagger/Scalar'dan kayıt ol → login → token ile hasta oluştur akışı çalışıyor.
-25+ unit test yeşil.
+**DoD:** ✅ Scalar'dan kayıt ol → login → token ile hasta oluştur akışı çalışıyor
+(entegrasyon testiyle de doğrulandı). **64 test yeşil** (hedef 25+).
+
+**Açık kalanlar (bilinçli):** Dapper ve Specification pattern'e ihtiyaç doğmadı —
+sorgular tek tabloya ve basit filtrelere bakıyor. Ağır rapor sorguları Faz 5'te
+gelince değerlendirilecek.
 
 **Tuzak:** Anemic domain model. `Patient.SetName(x)` yerine iş kuralını içeren
 `Patient.UpdateDemographics(...)` yaz; setter'lar `private`.

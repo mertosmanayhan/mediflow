@@ -1,4 +1,5 @@
 using System.Text;
+using MediFlow.BuildingBlocks.Application;
 using MediFlow.Identity.Application.Abstractions;
 using MediFlow.Identity.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -8,23 +9,32 @@ using Microsoft.Extensions.DependencyInjection;
 namespace MediFlow.Identity.Infrastructure;
 
 /// <summary>Identity modülünün kendi DI kayıtları.</summary>
+/// <remarks>
+/// <c>IConfiguration</c> parametresi almıyor; gerekçesi
+/// <c>PatientProfileModule</c> üzerinde ayrıntılı yazılı (modüller
+/// birbirine referans vermediği için buradan bağ kurulamıyor).
+/// Kısaca: yapılandırmayı kayıt anında okumak
+/// değeri o an donduruyor ve entegrasyon testlerinin yanlış veritabanına
+/// bağlanmasına yol açmıştı.
+/// </remarks>
 public static class IdentityModule
 {
-    public static IServiceCollection AddIdentityModule(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    public static IServiceCollection AddIdentityModule(this IServiceCollection services)
     {
-        // AYRI VERİTABANI, ayrı bağlantı dizesi.
-        // Aynı sunucuda ama ayrı veritabanında: modül Faz 2'de kendi
-        // servisine çıkarıldığında veritabanını taşımak yerine sadece
-        // bağlantı dizesini yeni servise vermek yeterli olacak.
-        string connectionString = configuration.GetConnectionString("Identity")
-            ?? throw new InvalidOperationException(
-                "ConnectionStrings:Identity tanımlı değil. " +
-                "dotnet user-secrets set \"ConnectionStrings:Identity\" \"...\" " +
-                "--project src/Host/MediFlow.Api");
+        services.AddDbContext<IdentityDbContext>((serviceProvider, options) =>
+        {
+            // AYRI VERİTABANI, ayrı bağlantı dizesi.
+            // Aynı sunucuda ama ayrı veritabanında: modül Faz 2'de kendi
+            // servisine çıkarıldığında veritabanını taşımak yerine sadece
+            // bağlantı dizesini yeni servise vermek yeterli olacak.
+            string connectionString = serviceProvider
+                .GetRequiredService<IConfiguration>()
+                .GetConnectionString("Identity")
+                ?? throw new InvalidOperationException(
+                    "ConnectionStrings:Identity tanımlı değil. " +
+                    "dotnet user-secrets set \"ConnectionStrings:Identity\" \"...\" " +
+                    "--project src/Host/MediFlow.Api");
 
-        services.AddDbContext<IdentityDbContext>(options =>
             options.UseSqlServer(connectionString, sqlServer =>
             {
                 sqlServer.MigrationsHistoryTable("__EFMigrationsHistory", "Identity");
@@ -32,10 +42,15 @@ public static class IdentityModule
                     maxRetryCount: 3,
                     maxRetryDelay: TimeSpan.FromSeconds(5),
                     errorNumbersToAdd: null);
-            }));
+            });
+        });
 
         services.AddScoped<IUserRepository, EfUserRepository>();
         services.AddScoped<IRefreshTokenRepository, EfRefreshTokenRepository>();
+
+        // Identity'nin DbContext'i de bir unit of work.
+        services.AddScoped<IUnitOfWork>(serviceProvider =>
+            serviceProvider.GetRequiredService<IdentityDbContext>());
 
         // Hash'leyici durum tutmuyor ve thread-safe -> tek örnek yeter.
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
@@ -52,8 +67,11 @@ public static class IdentityModule
         // AddOptions<T>().Validate(...).ValidateOnStart() ile uygulama
         // AÇILIRKEN patlıyor ve ne eksik olduğunu söylüyor.
         // Faz 0 ilkesi: gürültülü hata > sessiz yanlış davranış.
+        // BindConfiguration, .Bind(configuration.GetSection(...))'ın tembel
+        // karşılığı: IConfiguration'ı servis sağlayıcıdan kendisi çözüyor,
+        // yani burada bir yapılandırma nesnesi yakalanmıyor.
         services.AddOptions<JwtOptions>()
-            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .BindConfiguration(JwtOptions.SectionName)
             .Validate(
                 options => !string.IsNullOrWhiteSpace(options.Issuer),
                 "Jwt:Issuer tanımlı değil.")

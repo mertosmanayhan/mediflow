@@ -4,40 +4,40 @@ using Microsoft.EntityFrameworkCore;
 namespace MediFlow.PatientProfile.Infrastructure;
 
 /// <summary>
-/// <see cref="IPatientRepository"/>'nin gerçek veritabanı karşılığı.
+/// <see cref="IPatientRepository"/>'nin veritabanı karşılığı.
 /// </summary>
 /// <remarks>
-/// SİPARİŞ FORMUNU DOLDURAN İKİNCİ SINIF.
+/// SaveChanges ARTIK BURADA ÇAĞRILMIYOR.
 ///
-/// Birincisi InMemoryPatientRepository'ydi (hafızada tutuyordu). Bu sınıf
-/// aynı arayüzü dolduruyor ama MSSQL'e yazıyor.
+/// Önceki hali her ekleme işleminde hemen yazıyordu. Bir komut iki şey
+/// değiştirdiğinde bu bir problem: ilki yazılır, ikincisi patlar, ortada
+/// tutarsız veri kalır.
 ///
-/// VE EN ÖNEMLİSİ: Application katmanındaki CreatePatientHandler'ın TEK
-/// SATIRI DEĞİŞMEDİ. O hangi sınıfın verildiğini ayırt edemiyor. İki adım
-/// önce "arayüz = sipariş formu" derken verdiğimiz sözün karşılığı bu.
+/// Artık yazma işini pipeline'daki UnitOfWorkBehavior yapıyor ve istek
+/// başına TEK SaveChanges çağrılıyor - EF onu kendi transaction'ına
+/// sardığı için ya hepsi yazılıyor ya hiçbiri. Repository'nin işi
+/// "değişikliği bildirmek", "yazmak" değil.
 /// </remarks>
 public sealed class EfPatientRepository(PatientProfileDbContext context) : IPatientRepository
 {
-    public async Task AddAsync(Patient patient, CancellationToken cancellationToken = default)
+    public Task AddAsync(Patient patient, CancellationToken cancellationToken = default)
     {
         context.Patients.Add(patient);
-
-        // NOT: SaveChanges'i şimdilik burada çağırıyoruz - tek aggregate
-        // değiştiren basit bir akış için yeterli.
-        //
-        // Ama bu geçici: bir istek İKİ ayrı aggregate değiştirdiğinde
-        // (ör. "randevu oluştur + hastanın geçmişine ekle") ikisinin TEK
-        // transaction'da yazılması gerekir. O zaman SaveChanges buradan
-        // çıkıp ortak bir yere (Unit of Work / transaction behavior)
-        // taşınacak. Sorunu yaşamadan soyutlama eklemiyoruz.
-        await context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
     /// <remarks>
-    /// Alerjiler için <c>Include</c> yazmıyoruz: "owned" koleksiyon oldukları
-    /// için EF onları her zaman hastayla beraber getiriyor.
+    /// Alerjiler için <c>Include</c> yazmıyoruz: "owned" koleksiyon
+    /// oldukları için EF onları her zaman hastayla beraber getiriyor.
+    ///
+    /// Silinmiş kayıtlar için de filtre yazmıyoruz: global query filter
+    /// her sorguya "IsDeleted = 0" ekliyor.
     /// </remarks>
     public async Task<Patient?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         await context.Patients
             .FirstOrDefaultAsync(patient => patient.Id == id, cancellationToken);
+
+    // EF'e "sil" diyoruz; SoftDeleteInterceptor bunu güncellemeye
+    // çeviriyor. Bu sınıf soft delete diye bir şey bilmiyor.
+    public void Remove(Patient patient) => context.Patients.Remove(patient);
 }

@@ -36,7 +36,7 @@ dosyalar alfabetik sıralandığında `faz-10` ile `faz-2` karışmasın.
 | Faz | Dosya | Konu |
 |---|---|---|
 | 0 | [faz-00-temel.md](faz-00-temel.md) | Git/GitHub disiplini, derleme altyapısı, Docker |
-| 1 | *(yazılacak)* | Modüler monolit: Identity + PatientProfile |
+| 1 | [faz-01-moduler-monolit.md](faz-01-moduler-monolit.md) | Modüler monolit: Identity + PatientProfile |
 
 ## Şablon
 

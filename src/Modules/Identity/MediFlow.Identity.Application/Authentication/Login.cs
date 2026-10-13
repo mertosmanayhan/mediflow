@@ -95,7 +95,6 @@ internal sealed class LoginCommandHandler(
             tokenProvider.RefreshTokenLifetime);
 
         await refreshTokens.AddAsync(record, cancellationToken);
-        await refreshTokens.SaveChangesAsync(cancellationToken);
 
         // Dışarıya jetonun KENDİSİ dönüyor; veritabanında HASH'i duruyor.
         // Sunucu bu jetonu bir daha asla göremez - tıpkı şifre gibi.

@@ -31,6 +31,7 @@
     <!-- Test host'u: 'dotnet test' komutunun altyapısı -->
     <PackageVersion Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.12" />
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
@@ -40,6 +41,9 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
     <!-- Kod kapsama ölçümü. Faz 6'da CI'da eşik koyacağız. -->
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
+
+    <!-- Uygulamayı bellekte gerçek pipeline'ıyla ayağa kaldıran test altyapısı -->
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
   </ItemGroup>
   <!-- ==========================================================
        UYGULAMA KATMANI — iş akışı altyapısı

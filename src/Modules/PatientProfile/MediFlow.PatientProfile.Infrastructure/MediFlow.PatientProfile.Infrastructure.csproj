@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MediFlow.PatientProfile.Domain\MediFlow.PatientProfile.Domain.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\MediFlow.BuildingBlocks.Application\MediFlow.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\MediFlow.BuildingBlocks.Infrastructure\MediFlow.BuildingBlocks.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

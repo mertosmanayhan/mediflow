@@ -23,6 +23,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!--
+      Top-level statement kullandığımız için derleyicinin ürettiği Program
+      sınıfı INTERNAL. WebApplicationFactory<Program> ona erişebilmeli.
+      Alternatif Program'ı public yapmaktı; bu daha dar bir kapı.
+    -->
+    <InternalsVisibleTo Include="MediFlow.Api.IntegrationTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Sürüm yok: Directory.Packages.props'tan geliyor -->
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
@@ -61,6 +70,7 @@
     <!-- Identity modülü -->
     <ProjectReference Include="..\..\Modules\Identity\MediFlow.Identity.Application\MediFlow.Identity.Application.csproj" />
     <ProjectReference Include="..\..\Modules\Identity\MediFlow.Identity.Infrastructure\MediFlow.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\MediFlow.BuildingBlocks.Infrastructure\MediFlow.BuildingBlocks.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
