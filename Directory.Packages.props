@@ -30,11 +30,11 @@
   <ItemGroup Label="Test">
     <!-- Test host'u: 'dotnet test' komutunun altyapısı -->
     <PackageVersion Include="BCrypt.Net-Next" Version="4.2.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
-    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.14" />
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <!-- Test framework'ü: [Fact], [Theory], Assert -->
     <PackageVersion Include="xunit" Version="2.9.3" />
     <!-- Adaptör: test host'unun xUnit testlerini bulmasını sağlar -->
@@ -43,7 +43,7 @@
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
 
     <!-- Uygulamayı bellekte gerçek pipeline'ıyla ayağa kaldıran test altyapısı -->
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.14" />
   </ItemGroup>
   <!-- ==========================================================
        UYGULAMA KATMANI — iş akışı altyapısı
@@ -75,14 +75,14 @@
       Bu ayrım, Domain'in IPatientRepository'yi tanıyıp EF Core'u
       tanımamasıyla aynı mantık.
     -->
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
   </ItemGroup>
   <!-- ==========================================================
        VERİ ERİŞİMİ
        ========================================================== -->
   <ItemGroup Label="Data">
     <!-- EF Core'un SQL Server sağlayıcısı: LINQ sorgularını T-SQL'e çevirir -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.14" />
     <!--
       Migration üretmek için gereken TASARIM ZAMANI paketi.
       Sadece 'dotnet ef' komutları çalışırken kullanılır; uygulamayla
@@ -91,7 +91,7 @@
       çünkü "hangi proje nasıl kullanıyor" bilgisi projeye özeldir.
       ('dotnet add package' ikisine de yazmıştı, buradakini temizledik.)
     -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14" />
   </ItemGroup>
   <!-- ==========================================================
        WEB / API
@@ -101,9 +101,9 @@
        ========================================================== -->
   <ItemGroup Label="Web">
     <!-- API'nin kendini tanımlayan OpenAPI belgesini üretmesi için -->
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
     <!-- O belgeyi tarayıcıda gezilebilir arayüze çeviren araç -->
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.17.14" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.18.7" />
     <!-- Yapılandırılmış loglama: Serilog + Seq sink'i.
          Hangi log sağlayıcısının kullanıldığı bir HOST kararı, o yüzden
          bu paketler Api katmanında. Application sadece ILogger arayüzünü
